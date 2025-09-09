@@ -419,7 +419,16 @@
                 flex-direction: column;
             }
         }
-    
+    </style>
+</head>
+<body>
+    <div class="login-container" id="login-container">
+        <h2><i class="fas fa-lock"></i> Đăng nhập hệ thống</h2>
+        <p>Vui lòng nhập mật khẩu để truy cập</p>
+        <input type="password" id="password-input" placeholder="Nhập mật khẩu">
+        <button onclick="checkPassword()">Đăng nhập</button>
+        <div class="login-message" id="login-message"></div>
+    </div>
 
     <div class="container" id="app-container">
         <header>
@@ -575,7 +584,54 @@
                 });
         }
 
-       
+        // Mật khẩu để truy cập tính năng admin
+        const ADMIN_PASSWORD = "thaithae2025@";
+        let isAdmin = false;
+        
+        // Kiểm tra mật khẩu
+        function checkPassword() {
+            const password = document.getElementById('password-input').value;
+            const loginMessage = document.getElementById('login-message');
+            
+            if (password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                showAdminFeatures();
+                setupFirebaseListeners();
+                loadDataFromFirebase();
+            } else {
+                loginMessage.textContent = 'Mật khẩu không đúng. Vui lòng thử lại.';
+            }
+        }
+        
+        // Đăng xuất
+        function logout() {
+            isAdmin = false;
+            document.getElementById('login-container').style.display = 'block';
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('password-input').value = '';
+            document.getElementById('login-message').textContent = '';
+            hideAdminFeatures();
+        }
+        
+        // Hiển thị tính năng admin
+        function showAdminFeatures() {
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                el.style.display = 'flex';
+            });
+            
+            // Thêm nút xóa cho các mục
+            addRemoveButtons();
+        }
+        
+        // Ẩn tính năng admin
+        function hideAdminFeatures() {
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                el.style.display = 'none';
+            });
             
             // Xóa nút xóa cho các mục
             removeRemoveButtons();
@@ -1231,4 +1287,3 @@
     </script>
 </body>
 </html>
-
