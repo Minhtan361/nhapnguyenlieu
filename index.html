@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Mua Hàng - Firebase</title>
+    <title>Minhtan361 - Firebase</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -194,6 +194,31 @@
             background-color: #e8f5e9 !important;
         }
         
+        .editable-row {
+            background-color: #e3f2fd !important;
+        }
+        
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auth-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 400px;
+            max-width: 90%;
+        }
+        
         @media (max-width: 768px) {
             .food-item {
                 grid-template-columns: 1fr;
@@ -202,14 +227,19 @@
             .food-item label {
                 grid-column: 1;
             }
+            
+            .auth-content {
+                width: 90%;
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header text-center">
-            <h1><i class="fas fa-shopping-cart me-2"></i>HỆ THỐNG QUẢN LÝ MUA HÀNG</h1>
-            <p class="lead">Theo dõi số lượng hàng đã mua theo ngày và quản lý tồn kho dễ dàng</p>
+            <h1><i class="fas fa-shopping-cart me-2"></i>Nhập Liệu Hằng Ngày</h1>
+            <p class="lead">minhtan361 - THAITHAE</p>
             <div class="d-flex justify-content-center align-items-center mt-3">
                 <span class="sync-status sync-online" id="syncStatus"></span>
                 <small id="syncMessage">Đang đồng bộ dữ liệu...</small>
@@ -218,11 +248,27 @@
         
         <div class="notification" id="notification"></div>
         
+        <!-- Modal xác thực -->
+        <div class="auth-modal" id="authModal">
+            <div class="auth-content">
+                <h3 class="text-center mb-4">Xác thực quyền quản trị</h3>
+                <div class="mb-3">
+                    <label for="passwordInput" class="form-label">Mật khẩu:</label>
+                    <input type="password" class="form-control" id="passwordInput" placeholder="Nhập mật khẩu">
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" id="submitPassword">Xác nhận</button>
+                    <button class="btn btn-secondary" id="cancelAuth">Hủy</button>
+                </div>
+                <p class="text-center mt-3 text-danger" id="authError" style="display: none;">Mật khẩu không đúng!</p>
+            </div>
+        </div>
+        
         <div class="row">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-calendar-day me-2"></i>Nhập thông tin mua hàng
+                        <i class="fas fa-calendar-day me-2"></i>Thông Tin
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
@@ -335,6 +381,7 @@
                                         <th>Số lượng</th>
                                         <th>Đơn giá (VND)</th>
                                         <th>Thành tiền (VND)</th>
+                                        <th id="editColumnHeader" style="display: none;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -348,6 +395,9 @@
                             </button>
                             <button class="btn btn-success" id="calculateTotal">
                                 <i class="fas fa-calculator me-2"></i>Tính tổng
+                            </button>
+                            <button class="btn btn-warning" id="toggleEditMode">
+                                <i class="fas fa-edit me-2"></i>Chỉnh sửa
                             </button>
                         </div>
                     </div>
@@ -392,26 +442,11 @@
                         </div>
                     </div>
                 </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-info-circle me-2"></i>Hướng dẫn sử dụng
-                    </div>
-                    <div class="card-body">
-                        <ol class="list-group list-group-numbered">
-                            <li class="list-group-item">Chọn ngày và nhập số lượng hàng đã mua</li>
-                            <li class="list-group-item">Nhập đơn giá để tự động tính thành tiền</li>
-                            <li class="list-group-item">Nhấn "Lưu thông tin" để lưu dữ liệu</li>
-                            <li class="list-group-item">Chọn ngày khác để xem hoặc chỉnh sửa</li>
-                            <li class="list-group-item">Xuất file Excel để lưu trữ hoặc in ấn</li>
-                        </ol>
-                    </div>
-                </div>
             </div>
         </div>
         
         <footer>
-            <p>Hệ thống Quản lý Mua hàng &copy; 2023 - Dữ liệu được đồng bộ thời gian thực với Firebase</p>
+            <p>minhtan361 - THAITHAE &copy; 2023 - Dữ liệu được đồng bộ thời gian thực với Firebase</p>
         </footer>
     </div>
 
@@ -434,6 +469,14 @@
         // Biến toàn cục
         let purchaseData = {};
         let unsubscribe = null;
+        let isAuthenticated = false;
+        let isEditMode = false;
+        let currentEditingDate = null;
+        
+        // Hàm định dạng số tiền theo kiểu Việt Nam
+        function formatCurrencyVND(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount);
+        }
         
         document.addEventListener('DOMContentLoaded', function() {
             // Thiết lập ngày mặc định là ngày hôm nay
@@ -451,6 +494,48 @@
                 setTimeout(() => {
                     notification.style.display = 'none';
                 }, 3000);
+            }
+            
+            // Hiển thị modal xác thực
+            function showAuthModal(callback) {
+                const modal = document.getElementById('authModal');
+                const errorMsg = document.getElementById('authError');
+                const passwordInput = document.getElementById('passwordInput');
+                
+                // Reset modal
+                passwordInput.value = '';
+                errorMsg.style.display = 'none';
+                
+                // Hiển thị modal
+                modal.style.display = 'flex';
+                
+                // Xử lý sự kiện xác nhận
+                const confirmHandler = function() {
+                    if (passwordInput.value === 'thaithae2025@') {
+                        isAuthenticated = true;
+                        modal.style.display = 'none';
+                        if (callback) callback(true);
+                    } else {
+                        errorMsg.style.display = 'block';
+                    }
+                };
+                
+                // Xử lý sự kiện hủy
+                const cancelHandler = function() {
+                    modal.style.display = 'none';
+                    if (callback) callback(false);
+                };
+                
+                // Gán sự kiện
+                document.getElementById('submitPassword').onclick = confirmHandler;
+                document.getElementById('cancelAuth').onclick = cancelHandler;
+                
+                // Xử lý nhấn phím Enter
+                passwordInput.onkeypress = function(e) {
+                    if (e.key === 'Enter') {
+                        confirmHandler();
+                    }
+                };
             }
             
             // Thiết lập lắng nghe dữ liệu thời gian thực
@@ -486,7 +571,7 @@
                         const calculateTotal = () => {
                             const quantity = parseFloat(quantityInput.value) || 0;
                             const price = parseFloat(priceInput.value) || 0;
-                            totalInput.value = (quantity * price).toLocaleString('vi-VN');
+                            totalInput.value = formatCurrencyVND(quantity * price);
                         };
                         
                         quantityInput.addEventListener('input', calculateTotal);
@@ -564,6 +649,9 @@
                 const tableBody = document.querySelector('#dataTable tbody');
                 tableBody.innerHTML = '';
                 
+                // Ẩn cột chỉnh sửa nếu không ở chế độ chỉnh sửa
+                document.getElementById('editColumnHeader').style.display = isEditMode ? 'table-cell' : 'none';
+                
                 if (purchaseData[viewDate]) {
                     const data = purchaseData[viewDate];
                     let totalAmount = 0;
@@ -576,8 +664,13 @@
                                 row.innerHTML = `
                                     <td>${item}</td>
                                     <td>${details.quantity} kg</td>
-                                    <td>${details.price.toLocaleString('vi-VN')}</td>
-                                    <td>${details.total.toLocaleString('vi-VN')}</td>
+                                    <td>${formatCurrencyVND(details.price)}</td>
+                                    <td>${formatCurrencyVND(details.total)}</td>
+                                    ${isEditMode ? `<td>
+                                        <button class="btn btn-sm btn-outline-primary edit-item" data-category="meat" data-item="${item}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>` : ''}
                                 `;
                                 tableBody.appendChild(row);
                                 totalAmount += details.total;
@@ -593,8 +686,13 @@
                                 row.innerHTML = `
                                     <td>${item}</td>
                                     <td>${details.quantity} kg</td>
-                                    <td>${details.price.toLocaleString('vi-VN')}</td>
-                                    <td>${details.total.toLocaleString('vi-VN')}</td>
+                                    <td>${formatCurrencyVND(details.price)}</td>
+                                    <td>${formatCurrencyVND(details.total)}</td>
+                                    ${isEditMode ? `<td>
+                                        <button class="btn btn-sm btn-outline-primary edit-item" data-category="seafood" data-item="${item}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>` : ''}
                                 `;
                                 tableBody.appendChild(row);
                                 totalAmount += details.total;
@@ -606,28 +704,77 @@
                     const totalRow = document.createElement('tr');
                     totalRow.className = 'total-row';
                     totalRow.innerHTML = `
-                        <td colspan="3"><strong>Tổng cộng</strong></td>
-                        <td><strong>${totalAmount.toLocaleString('vi-VN')} VND</strong></td>
+                        <td colspan="${isEditMode ? '4' : '3'}"><strong>Tổng cộng</strong></td>
+                        <td><strong>${formatCurrencyVND(totalAmount)} VND</strong></td>
                     `;
                     tableBody.appendChild(totalRow);
                     
                     // Hiển thị thông tin cập nhật
                     const infoRow = document.createElement('tr');
                     infoRow.innerHTML = `
-                        <td colspan="4" class="text-muted small">
+                        <td colspan="${isEditMode ? '5' : '4'}" class="text-muted small">
                             Cập nhật lần cuối: 
                             ${data.updatedAt ? new Date(data.updatedAt.toDate()).toLocaleString('vi-VN') : 'N/A'}
                         </td>
                     `;
                     tableBody.appendChild(infoRow);
+                    
+                    // Thêm sự kiện cho các nút chỉnh sửa
+                    if (isEditMode) {
+                        document.querySelectorAll('.edit-item').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const category = this.dataset.category;
+                                const itemName = this.dataset.item;
+                                editItem(viewDate, category, itemName);
+                            });
+                        });
+                    }
                 } else {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td colspan="4" class="text-center">Không có dữ liệu cho ngày này</td>
+                        <td colspan="${isEditMode ? '5' : '4'}" class="text-center">Không có dữ liệu cho ngày này</td>
                     `;
                     tableBody.appendChild(row);
                 }
             });
+            
+            // Chỉnh sửa mặt hàng
+            function editItem(date, category, itemName) {
+                const data = purchaseData[date];
+                if (!data || !data[category] || !data[category][itemName]) return;
+                
+                const itemData = data[category][itemName];
+                
+                // Hiển thị modal chỉnh sửa
+                const newQty = prompt(`Chỉnh sửa số lượng cho "${itemName}":`, itemData.quantity);
+                
+                if (newQty !== null) {
+                    const quantity = parseFloat(newQty);
+                    if (isNaN(quantity) || quantity < 0) {
+                        showNotification('Số lượng không hợp lệ!', false);
+                        return;
+                    }
+                    
+                    // Cập nhật dữ liệu
+                    db.collection('purchases').doc(date).set({
+                        [category]: {
+                            ...data[category],
+                            [itemName]: {
+                                ...itemData,
+                                quantity: quantity,
+                                total: quantity * itemData.price
+                            }
+                        },
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true })
+                    .then(() => {
+                        showNotification(`Đã cập nhật số lượng ${itemName}`);
+                    })
+                    .catch((error) => {
+                        showNotification('Lỗi khi cập nhật: ' + error.message, false);
+                    });
+                }
+            }
             
             // Kích hoạt xem dữ liệu ngày hiện tại
             document.getElementById('viewDate').dispatchEvent(new Event('change'));
@@ -637,14 +784,32 @@
                 const viewDate = document.getElementById('viewDate').value;
                 
                 if (purchaseData[viewDate]) {
-                    if (confirm('Bạn có chắc chắn muốn xóa dữ liệu ngày ' + viewDate + '?')) {
-                        db.collection('purchases').doc(viewDate).delete()
-                            .then(() => {
-                                showNotification('Đã xóa dữ liệu ngày ' + viewDate);
-                            })
-                            .catch((error) => {
-                                showNotification('Lỗi khi xóa dữ liệu: ' + error.message, false);
-                            });
+                    // Yêu cầu xác thực trước khi xóa
+                    if (!isAuthenticated) {
+                        showAuthModal(function(success) {
+                            if (success) {
+                                // Sau khi xác thực thành công, thực hiện xóa
+                                if (confirm('Bạn có chắc chắn muốn xóa dữ liệu ngày ' + viewDate + '?')) {
+                                    db.collection('purchases').doc(viewDate).delete()
+                                        .then(() => {
+                                            showNotification('Đã xóa dữ liệu ngày ' + viewDate);
+                                        })
+                                        .catch((error) => {
+                                            showNotification('Lỗi khi xóa dữ liệu: ' + error.message, false);
+                                        });
+                                }
+                            }
+                        });
+                    } else {
+                        if (confirm('Bạn có chắc chắn muốn xóa dữ liệu ngày ' + viewDate + '?')) {
+                            db.collection('purchases').doc(viewDate).delete()
+                                .then(() => {
+                                    showNotification('Đã xóa dữ liệu ngày ' + viewDate);
+                                })
+                                .catch((error) => {
+                                    showNotification('Lỗi khi xóa dữ liệu: ' + error.message, false);
+                                });
+                        }
                     }
                 } else {
                     showNotification('Không có dữ liệu để xóa cho ngày này', false);
@@ -674,9 +839,110 @@
                             totalAmount += details.total;
                         }
                     }
+                    
+                    alert(`Tổng kết ngày ${viewDate}:
+- Tổng lượng thịt: ${totalMeat.toFixed(2)} kg
+- Tổng lượng hải sản: ${totalSeafood.toFixed(2)} kg
+- Tổng tiền: ${formatCurrencyVND(totalAmount)} VND`);
+                } else {
+                    showNotification('Không có dữ liệu để tính tổng', false);
+                }
+            });
+            
+            // Chuyển đổi chế độ chỉnh sửa
+            document.getElementById('toggleEditMode').addEventListener('click', function() {
+                if (!isAuthenticated) {
+                    showAuthModal(function(success) {
+                        if (success) {
+                            isEditMode = !isEditMode;
+                            document.getElementById('toggleEditMode').innerHTML = 
+                                isEditMode ? 
+                                '<i class="fas fa-times me-2"></i>Thoát chỉnh sửa' : 
+                                '<i class="fas fa-edit me-2"></i>Chỉnh sửa';
+                            
+                            // Cập nhật lại bảng
+                            document.getElementById('viewDate').dispatchEvent(new Event('change'));
+                        }
+                    });
+                } else {
+                    isEditMode = !isEditMode;
+                    document.getElementById('toggleEditMode').innerHTML = 
+                        isEditMode ? 
+                        '<i class="fas fa-times me-2"></i>Thoát chỉnh sửa' : 
+                        '<i class="fas fa-edit me-2"></i>Chỉnh sửa';
+                    
+                    // Cập nhật lại bảng
+                    document.getElementById('viewDate').dispatchEvent(new Event('change'));
+                }
+            });
+            
+            // Xuất file Excel
+            document.getElementById('exportExcel').addEventListener('click', function() {
+                const month = document.getElementById('monthSelector').value;
+                if (!month) {
+                    showNotification('Vui lòng chọn tháng trước!', false);
+                    return;
                 }
                 
-                alert(`Tổng số lượng cho ngày ${viewDate}:\nThịt: ${totalMeat.toFixed(2)} kg\nHải sản: ${totalSeafood.toFixed(2)} kg\nTổng tiền: ${totalAmount.toLocaleString('vi-VN')} VND`);
+                // Lọc dữ liệu theo tháng
+                const startDate = month + '-01';
+                const endDate = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0).toISOString().split('T')[0];
+                
+                const monthData = {};
+                for (const [date, data] of Object.entries(purchaseData)) {
+                    if (date >= startDate && date <= endDate) {
+                        monthData[date] = data;
+                    }
+                }
+                
+                if (Object.keys(monthData).length === 0) {
+                    showNotification('Không có dữ liệu cho tháng này', false);
+                    return;
+                }
+                
+                // Chuẩn bị dữ liệu cho Excel
+                const wsData = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)']];
+                
+                for (const [date, data] of Object.entries(monthData)) {
+                    if (data.meat) {
+                        for (const [item, details] of Object.entries(data.meat)) {
+                            if (details.quantity > 0) {
+                                wsData.push([
+                                    date,
+                                    item,
+                                    details.quantity,
+                                    details.price,
+                                    details.total
+                                ]);
+                            }
+                        }
+                    }
+                    
+                    if (data.seafood) {
+                        for (const [item, details] of Object.entries(data.seafood)) {
+                            if (details.quantity > 0) {
+                                wsData.push([
+                                    date,
+                                    item,
+                                    details.quantity,
+                                    details.price,
+                                    details.total
+                                ]);
+                            }
+                        }
+                    }
+                }
+                
+                // Tạo worksheet
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                
+                // Tạo workbook và thêm worksheet
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Dữ liệu mua hàng');
+                
+                // Xuất file
+                XLSX.writeFile(wb, `Du_lieu_mua_hang_${month}.xlsx`);
+                showNotification('Đã xuất file Excel thành công');
             });
             
             // Thêm mặt hàng thịt mới
@@ -685,28 +951,46 @@
                 const qtyInput = document.getElementById('otherMeatQty');
                 const priceInput = document.getElementById('otherMeatPrice');
                 
-                if (!nameInput.value || !qtyInput.value) {
-                    showNotification('Vui lòng nhập đầy đủ tên và số lượng', false);
+                const name = nameInput.value.trim();
+                const qty = parseFloat(qtyInput.value);
+                const price = parseFloat(priceInput.value) || 0;
+                
+                if (!name || isNaN(qty) || qty <= 0) {
+                    showNotification('Vui lòng nhập đầy đủ thông tin', false);
                     return;
                 }
                 
                 const newItem = document.createElement('div');
                 newItem.className = 'food-item';
                 newItem.innerHTML = `
-                    <label class="form-label">${nameInput.value}</label>
-                    <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="${nameInput.value}" value="${qtyInput.value}" min="0" step="0.1">
-                    <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="${nameInput.value}" value="${priceInput.value}" min="0">
-                    <input type="number" class="form-control" placeholder="Thành tiền" data-name="${nameInput.value}" readonly>
+                    <label class="form-label">${name}</label>
+                    <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="${name}" min="0" step="0.1" value="${qty}">
+                    <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="${name}" min="0" value="${price}">
+                    <input type="number" class="form-control" placeholder="Thành tiền" data-name="${name}" readonly value="${formatCurrencyVND(qty * price)}">
                 `;
                 
                 document.getElementById('meatItems').insertBefore(newItem, document.getElementById('meatItems').lastElementChild);
                 
+                // Thiết lập tính toán cho mặt hàng mới
+                const quantityInput = newItem.querySelector('input[placeholder*="Số lượng"]');
+                const priceInputNew = newItem.querySelector('input[placeholder*="Đơn giá"]');
+                const totalInput = newItem.querySelector('input[placeholder*="Thành tiền"]');
+                
+                const calculateTotal = () => {
+                    const quantity = parseFloat(quantityInput.value) || 0;
+                    const price = parseFloat(priceInputNew.value) || 0;
+                    totalInput.value = formatCurrencyVND(quantity * price);
+                };
+                
+                quantityInput.addEventListener('input', calculateTotal);
+                priceInputNew.addEventListener('input', calculateTotal);
+                
+                // Xóa dữ liệu đã nhập
                 nameInput.value = '';
                 qtyInput.value = '';
                 priceInput.value = '';
                 
-                setupCalculation();
-                showNotification('Đã thêm mặt hàng thịt mới');
+                showNotification(`Đã thêm mặt hàng "${name}" vào danh sách thịt`);
             });
             
             // Thêm mặt hàng hải sản mới
@@ -715,93 +999,63 @@
                 const qtyInput = document.getElementById('otherSeafoodQty');
                 const priceInput = document.getElementById('otherSeafoodPrice');
                 
-                if (!nameInput.value || !qtyInput.value) {
-                    showNotification('Vui lòng nhập đầy đủ tên và số lượng', false);
+                const name = nameInput.value.trim();
+                const qty = parseFloat(qtyInput.value);
+                const price = parseFloat(priceInput.value) || 0;
+                
+                if (!name || isNaN(qty) || qty <= 0) {
+                    showNotification('Vui lòng nhập đầy đủ thông tin', false);
                     return;
                 }
                 
                 const newItem = document.createElement('div');
                 newItem.className = 'food-item';
                 newItem.innerHTML = `
-                    <label class="form-label">${nameInput.value}</label>
-                    <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="${nameInput.value}" value="${qtyInput.value}" min="0" step="0.1">
-                    <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="${nameInput.value}" value="${priceInput.value}" min="0">
-                    <input type="number" class="form-control" placeholder="Thành tiền" data-name="${nameInput.value}" readonly>
+                    <label class="form-label">${name}</label>
+                    <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="${name}" min="0" step="0.1" value="${qty}">
+                    <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="${name}" min="0" value="${price}">
+                    <input type="number" class="form-control" placeholder="Thành tiền" data-name="${name}" readonly value="${formatCurrencyVND(qty * price)}">
                 `;
                 
                 document.getElementById('seafoodItems').insertBefore(newItem, document.getElementById('seafoodItems').lastElementChild);
                 
+                // Thiết lập tính toán cho mặt hàng mới
+                const quantityInput = newItem.querySelector('input[placeholder*="Số lượng"]');
+                const priceInputNew = newItem.querySelector('input[placeholder*="Đơn giá"]');
+                const totalInput = newItem.querySelector('input[placeholder*="Thành tiền"]');
+                
+                const calculateTotal = () => {
+                    const quantity = parseFloat(quantityInput.value) || 0;
+                    const price = parseFloat(priceInputNew.value) || 0;
+                    totalInput.value = formatCurrencyVND(quantity * price);
+                };
+                
+                quantityInput.addEventListener('input', calculateTotal);
+                priceInputNew.addEventListener('input', calculateTotal);
+                
+                // Xóa dữ liệu đã nhập
                 nameInput.value = '';
                 qtyInput.value = '';
                 priceInput.value = '';
                 
-                setupCalculation();
-                showNotification('Đã thêm mặt hàng hải sản mới');
+                showNotification(`Đã thêm mặt hàng "${name}" vào danh sách hải sản`);
             });
             
-            // Xuất file Excel
-            document.getElementById('exportExcel').addEventListener('click', function() {
-                // Lấy tháng được chọn
-                const month = document.getElementById('monthSelector').value;
-                
-                if (!month) {
-                    showNotification('Vui lòng chọn tháng để xuất dữ liệu', false);
-                    return;
-                }
-                
-                // Lọc dữ liệu theo tháng
-                const monthData = {};
-                for (const [date, data] of Object.entries(purchaseData)) {
-                    if (date.startsWith(month)) {
-                        monthData[date] = data;
-                    }
-                }
-                
-                // Tạo workbook
-                const wb = XLSX.utils.book_new();
-                
-                // Tạo worksheet
-                const wsData = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)', 'Loại']];
-                
-                for (const [date, data] of Object.entries(monthData)) {
-                    if (data.meat) {
-                        for (const [item, details] of Object.entries(data.meat)) {
-                            if (details.quantity > 0) {
-                                wsData.push([date, item, details.quantity, details.price, details.total, 'Thịt']);
-                            }
-                        }
-                    }
-                    
-                    if (data.seafood) {
-                        for (const [item, details] of Object.entries(data.seafood)) {
-                            if (details.quantity > 0) {
-                                wsData.push([date, item, details.quantity, details.price, details.total, 'Hải sản']);
-                            }
-                        }
-                    }
-                }
-                
-                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                
-                // Thêm worksheet vào workbook
-                XLSX.utils.book_append_sheet(wb, ws, 'Mua hàng tháng');
-                
-                // Xuất file
-                XLSX.writeFile(wb, `Mua_hang_${month}.xlsx`);
-                
-                showNotification('Đã xuất file Excel thành công');
-            });
-            
-            // Cập nhật thống kê tháng
+            // Thiết lập thống kê tháng
             document.getElementById('monthSelector').addEventListener('change', function() {
                 const month = this.value;
+                if (!month) return;
+                
+                const startDate = month + '-01';
+                const endDate = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0).toISOString().split('T')[0];
+                
                 let totalDays = 0;
                 let totalMeat = 0;
                 let totalSeafood = 0;
                 let totalAmount = 0;
                 
                 for (const [date, data] of Object.entries(purchaseData)) {
-                    if (date.startsWith(month)) {
+                    if (date >= startDate && date <= endDate) {
                         totalDays++;
                         
                         if (data.meat) {
@@ -823,7 +1077,7 @@
                 document.getElementById('totalDays').textContent = totalDays;
                 document.getElementById('totalMeat').textContent = totalMeat.toFixed(2) + ' kg';
                 document.getElementById('totalSeafood').textContent = totalSeafood.toFixed(2) + ' kg';
-                document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('vi-VN') + ' VND';
+                document.getElementById('totalAmount').textContent = formatCurrencyVND(totalAmount) + ' VND';
             });
             
             // Thiết lập tháng hiện tại
@@ -831,10 +1085,8 @@
             document.getElementById('monthSelector').value = currentMonth;
             document.getElementById('monthSelector').dispatchEvent(new Event('change'));
             
-            // Thiết lập tính toán thành tiền
+            // Khởi tạo
             setupCalculation();
-            
-            // Thiết lập lắng nghe dữ liệu thời gian thực
             setupRealtimeListener();
         });
     </script>
