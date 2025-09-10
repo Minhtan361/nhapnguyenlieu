@@ -3,1287 +3,840 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Nguyên Liệu Hằng Ngày</title>
+    <title>Hệ Thống Quản Lý Mua Hàng - Firebase</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase App (core Firebase SDK) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <!-- Firebase Firestore -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <!-- Firebase Analytics -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
         }
         
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
             color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding-top: 20px;
         }
         
-        .login-container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-        }
-        
-        .login-container h2 {
-            margin-bottom: 20px;
-            color: #2c3e50;
-        }
-        
-        .login-container input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-        
-        .login-container button {
-            width: 100%;
-            padding: 12px;
-            background: #4CAF50;
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-top: 10px;
-        }
-        
-        .login-container button:hover {
-            background: #388E3C;
-        }
-        
-        .login-message {
-            margin-top: 15px;
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            display: none;
-        }
-        
-        header {
-            background: linear-gradient(90deg, #2c3e50 0%, #4ca1af 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
-        
-        .logout-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-        
-        .date-selector {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-        
-        .date-selector input, .date-selector button, .date-selector select {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-        
-        .date-selector input, .date-selector select {
-            border: 1px solid #ddd;
-            width: 200px;
-        }
-        
-        .date-display {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 8px 15px;
-            border-radius: 5px;
-        }
-        
-        .btn {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .btn:hover {
-            background: #388E3C;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .btn-export {
-            background: #2196F3;
-        }
-        
-        .btn-export:hover {
-            background: #1976D2;
-        }
-        
-        .btn-view {
-            background: #FF9800;
-        }
-        
-        .btn-view:hover {
-            background: #F57C00;
-        }
-        
-        .btn-remove {
-            background: #e74c3c;
-            padding: 5px 10px;
-            font-size: 0.9rem;
-        }
-        
-        .btn-remove:hover {
-            background: #c0392b;
-        }
-        
-        .content {
-            display: flex;
-            flex-wrap: wrap;
-            padding: 20px;
-            gap: 20px;
-        }
-        
-        .section {
-            flex: 1;
-            min-width: 300px;
-            background: #f9f9f9;
-            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-top-left-radius: 12px !important;
+            border-top-right-radius: 12px !important;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+        
+        .btn-success {
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+        
+        .btn-danger {
+            background-color: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 12px 15px;
+        }
+        
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .highlight {
+            background-color: #fff8e1;
         }
         
         .section-title {
-            font-size: 1.4rem;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #4ca1af;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 15px;
+            margin: 25px 0 20px;
+            color: var(--dark-color);
         }
         
-        .item-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-            padding: 10px;
+        .stats-box {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
             background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s;
-            position: relative;
-        }
-        
-        .item-row:hover {
-            transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
-        .item-name {
-            min-width: 120px;
-            font-weight: bold;
-            color: #2c3e50;
+        .stats-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
         }
         
-        input, select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        .stats-label {
             font-size: 1rem;
-            transition: border 0.3s;
+            color: #6c757d;
         }
         
-        input:focus, select:focus {
-            border-color: #4CAF50;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-        }
-        
-        .item-weight, .item-price {
-            width: 100px;
-        }
-        
-        .item-total {
-            width: 150px;
-            font-weight: bold;
-            color: #E91E63;
-            background: #f9f9f9;
-        }
-        
-        .total-section {
-            font-weight: bold;
-            margin-top: 15px;
-            padding: 15px;
-            background: #2c3e50;
-            color: white;
-            border-radius: 5px;
+        footer {
             text-align: center;
-            font-size: 1.2rem;
+            padding: 20px;
+            margin-top: 30px;
+            color: #6c757d;
+            font-size: 0.9rem;
         }
         
-        .custom-item-input {
+        .action-buttons {
             display: flex;
-            margin-top: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .food-item {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
         }
         
-        .custom-item-input input {
-            flex: 1;
+        .food-item label {
+            grid-column: 1 / 4;
         }
         
-        .history-panel {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-        }
-        
-        .history-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: white;
-        }
-        
-        .history-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .history-item:last-child {
-            border-bottom: none;
-        }
-        
-        .history-date {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .history-total {
-            color: #E91E63;
-            font-weight: bold;
-        }
-        
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-            margin-top: 15px;
-        }
-        
-        .calendar-day {
-            padding: 10px;
-            text-align: center;
-            border-radius: 5px;
-            cursor: pointer;
-            background: #f0f0f0;
-            transition: all 0.2s;
-        }
-        
-        .calendar-day.has-data {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .calendar-day:hover {
-            background: #2c3e50;
-            color: white;
-        }
-        
-        .calendar-header {
-            grid-column: span 7;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-        
-        .calendar-day-name {
-            text-align: center;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .month-summary {
-            margin-top: 20px;
-            padding: 15px;
-            background: #e3f2fd;
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
             border-radius: 8px;
-            border-left: 5px solid #2196F3;
-        }
-        
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dashed #ccc;
-        }
-        
-        .summary-total {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #E91E63;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 2px solid #ccc;
-        }
-        
-        .firebase-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            justify-content: center;
-        }
-        
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #4CAF50;
-            display: inline-block;
-        }
-        
-        .status-indicator.offline {
-            background: #f44336;
-        }
-        
-        .admin-only {
+            background: var(--secondary-color);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
             display: none;
         }
         
+        .price-input {
+            position: relative;
+        }
+        
+        .price-input::after {
+            content: "VND";
+            position: absolute;
+            right: 10px;
+            top: 12px;
+            color: #6c757d;
+        }
+        
+        .sync-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .sync-online {
+            background-color: #2ecc71;
+        }
+        
+        .sync-offline {
+            background-color: #e74c3c;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background-color: #e8f5e9 !important;
+        }
+        
         @media (max-width: 768px) {
-            .content {
-                flex-direction: column;
+            .food-item {
+                grid-template-columns: 1fr;
             }
             
-            .date-selector {
-                flex-direction: column;
+            .food-item label {
+                grid-column: 1;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container" id="login-container">
-        <h2><i class="fas fa-lock"></i> Đăng nhập hệ thống</h2>
-        <p>Vui lòng nhập mật khẩu để truy cập</p>
-        <input type="password" id="password-input" placeholder="Nhập mật khẩu">
-        <button onclick="checkPassword()">Đăng nhập</button>
-        <div class="login-message" id="login-message"></div>
-    </div>
-
-    <div class="container" id="app-container">
-        <header>
-            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
-            <h1><i class="fas fa-utensils"></i> QUẢN LÝ NGUYÊN LIỆU HẰNG NGÀY</h1>
-            
-            <div class="date-selector">
-                <input type="date" id="selected-date" value="">
-                <div class="date-display" id="current-date-display"></div>
-                <button class="btn" onclick="saveData()"><i class="fas fa-save"></i> Lưu dữ liệu</button>
-                <button class="btn btn-export admin-only" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Xuất Excel</button>
-                <button class="btn btn-view" onclick="toggleHistory()"><i class="fas fa-history"></i> Xem lịch sử</button>
-                <button class="btn btn-remove admin-only" onclick="deleteDateData()"><i class="fas fa-trash"></i> Xóa dữ liệu ngày</button>
-            </div>
-            
-            <div class="firebase-status" id="firebase-status">
-                <span class="status-indicator" id="firebase-status-indicator"></span>
-                <span id="firebase-status-text">Đang kết nối...</span>
-            </div>
-        </header>
-        
-        <div class="content">
-            <div class="section">
-                <div class="section-title">
-                    <span>THỊT</span>
-                    <span id="meat-count">5 mục</span>
-                </div>
-                <div id="meat-items">
-                    <!-- Các mục thịt sẽ được thêm ở đây bằng JavaScript -->
-                </div>
-                
-                <div class="custom-item-input admin-only">
-                    <input type="text" id="new-meat-item" placeholder="Tên nguyên liệu thịt mới">
-                    <button class="btn" onclick="addCustomItem('meat')"><i class="fas fa-plus"></i> Thêm</button>
-                </div>
-                
-                <div class="total-section" id="meat-total">Tổng giá trị thịt: 0 VNĐ</div>
-            </div>
-            
-            <div class="section">
-                <div class="section-title">
-                    <span>HẢI SẢN</span>
-                    <span id="seafood-count">8 mục</span>
-                </div>
-                <div id="seafood-items">
-                    <!-- Các mục hải sản sẽ được thêm ở đây bằng JavaScript -->
-                </div>
-                
-                <div class="custom-item-input admin-only">
-                    <input type="text" id="new-seafood-item" placeholder="Tên nguyên liệu hải sản mới">
-                    <button class="btn" onclick="addCustomItem('seafood')"><i class="fas fa-plus"></i> Thêm</button>
-                </div>
-                
-                <div class="total-section" id="seafood-total">Tổng giá trị hải sản: 0 VNĐ</div>
+    <div class="container">
+        <div class="header text-center">
+            <h1><i class="fas fa-shopping-cart me-2"></i>HỆ THỐNG QUẢN LÝ MUA HÀNG</h1>
+            <p class="lead">Theo dõi số lượng hàng đã mua theo ngày và quản lý tồn kho dễ dàng</p>
+            <div class="d-flex justify-content-center align-items-center mt-3">
+                <span class="sync-status sync-online" id="syncStatus"></span>
+                <small id="syncMessage">Đang đồng bộ dữ liệu...</small>
             </div>
         </div>
         
-        <div class="history-panel" id="history-panel" style="display: none;">
-            <div class="section-title">
-                <span>LỊCH SỬ NHẬP LIỆU THÁNG NÀY</span>
-                <span id="history-count">0 ngày có dữ liệu</span>
-            </div>
-            
-            <div class="date-selector">
-                <select id="month-select" onchange="updateCalendar()">
-                    <option value="0">Tháng 1</option>
-                    <option value="1">Tháng 2</option>
-                    <option value="2">Tháng 3</option>
-                    <option value="3">Tháng 4</option>
-                    <option value="4">Tháng 5</option>
-                    <option value="5">Tháng 6</option>
-                    <option value="6">Tháng 7</option>
-                    <option value="7">Tháng 8</option>
-                    <option value="8">Tháng 9</option>
-                    <option value="9">Tháng 10</option>
-                    <option value="10">Tháng 11</option>
-                    <option value="11">Tháng 12</option>
-                </select>
-                <select id="year-select" onchange="updateCalendar()">
-                    <!-- Năm sẽ được thêm bằng JavaScript -->
-                </select>
-                <button class="btn btn-export admin-only" onclick="exportMonthToExcel()"><i class="fas fa-file-excel"></i> Xuất tổng tháng</button>
-            </div>
-            
-            <div class="calendar" id="calendar">
-                <!-- Lịch sẽ được tạo bằng JavaScript -->
-            </div>
-            
-            <div class="month-summary" id="month-summary">
-                <h3>Tổng kết tháng</h3>
-                <div class="summary-item">
-                    <span>Tổng số ngày có dữ liệu:</span>
-                    <span id="summary-days">0</span>
+        <div class="notification" id="notification"></div>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-calendar-day me-2"></i>Nhập thông tin mua hàng
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="selectedDate" class="form-label">Chọn ngày:</label>
+                            <input type="date" class="form-control" id="selectedDate" required>
+                        </div>
+                        
+                        <h4 class="section-title">Thịt</h4>
+                        <div id="meatItems">
+                            <div class="food-item">
+                                <label class="form-label">Sườn cay</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Sườn cay" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Sườn cay" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Sườn cay" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Ba rọi</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Ba rọi" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Ba rọi" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Ba rọi" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Bằm</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Bằm" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Bằm" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Bằm" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Khác</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="otherMeatName" placeholder="Tên mặt hàng">
+                                </div>
+                                <input type="number" class="form-control" id="otherMeatQty" placeholder="Số lượng" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" id="otherMeatPrice" placeholder="Đơn giá" min="0">
+                                <button class="btn btn-outline-secondary" type="button" id="addMeatBtn">Thêm</button>
+                            </div>
+                        </div>
+                        
+                        <h4 class="section-title">Hải sản</h4>
+                        <div id="seafoodItems">
+                            <div class="food-item">
+                                <label class="form-label">Tôm</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Tôm" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Tôm" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Tôm" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Mực</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Mực" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Mực" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Mực" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Sò huyết</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Sò huyết" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Sò huyết" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Sò huyết" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Bạch tuộc</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Bạch tuộc" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Bạch tuộc" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Bạch tuộc" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Bún</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Bún" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Bún" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Bún" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Đậu hủ</label>
+                                <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="Đậu hủ" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="Đậu hủ" min="0">
+                                <input type="number" class="form-control" placeholder="Thành tiền" data-name="Đậu hủ" readonly>
+                            </div>
+                            <div class="food-item">
+                                <label class="form-label">Khác</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="otherSeafoodName" placeholder="Tên mặt hàng">
+                                </div>
+                                <input type="number" class="form-control" id="otherSeafoodQty" placeholder="Số lượng" min="0" step="0.1">
+                                <input type="number" class="form-control price-input" id="otherSeafoodPrice" placeholder="Đơn giá" min="0">
+                                <button class="btn btn-outline-secondary" type="button" id="addSeafoodBtn">Thêm</button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-primary btn-lg" id="saveData">
+                                <i class="fas fa-save me-2"></i>Lưu thông tin
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="summary-item">
-                    <span>Tổng giá trị thịt:</span>
-                    <span id="summary-meat">0 VNĐ</span>
-                </div>
-                <div class="summary-item">
-                    <span>Tổng giá trị hải sản:</span>
-                    <span id="summary-seafood">0 VNĐ</span>
-                </div>
-                <div class="summary-total">
-                    <span>Tổng giá trị:</span>
-                    <span id="summary-total">0 VNĐ</span>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-history me-2"></i>Dữ liệu đã nhập
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="viewDate" class="form-label">Chọn ngày để xem:</label>
+                            <input type="date" class="form-control" id="viewDate">
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>Mặt hàng</th>
+                                        <th>Số lượng</th>
+                                        <th>Đơn giá (VND)</th>
+                                        <th>Thành tiền (VND)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dữ liệu sẽ được thêm ở đây bằng JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between mt-3">
+                            <button class="btn btn-danger" id="deleteDate">
+                                <i class="fas fa-trash me-2"></i>Xóa dữ liệu ngày này
+                            </button>
+                            <button class="btn btn-success" id="calculateTotal">
+                                <i class="fas fa-calculator me-2"></i>Tính tổng
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="section-title" style="margin-top: 20px;">
-                <span>CHI TIẾT THEO NGÀY</span>
-            </div>
-            
-            <div class="history-list" id="history-list">
-                <!-- Lịch sử sẽ được thêm ở đây bằng JavaScript -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-pie me-2"></i>Thống kê tháng
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="monthSelector" class="form-label">Chọn tháng:</label>
+                            <input type="month" class="form-control" id="monthSelector">
+                        </div>
+                        
+                        <div class="stats-box mb-3">
+                            <div class="stats-number" id="totalDays">0</div>
+                            <div class="stats-label">Số ngày có dữ liệu</div>
+                        </div>
+                        
+                        <div class="stats-box mb-3">
+                            <div class="stats-number" id="totalMeat">0 kg</div>
+                            <div class="stats-label">Tổng lượng thịt</div>
+                        </div>
+                        
+                        <div class="stats-box mb-3">
+                            <div class="stats-number" id="totalSeafood">0 kg</div>
+                            <div class="stats-label">Tổng lượng hải sản</div>
+                        </div>
+                        
+                        <div class="stats-box mb-3">
+                            <div class="stats-number" id="totalAmount">0 VND</div>
+                            <div class="stats-label">Tổng tiền</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="exportExcel">
+                                <i class="fas fa-file-excel me-2"></i>Xuất file Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle me-2"></i>Hướng dẫn sử dụng
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item">Chọn ngày và nhập số lượng hàng đã mua</li>
+                            <li class="list-group-item">Nhập đơn giá để tự động tính thành tiền</li>
+                            <li class="list-group-item">Nhấn "Lưu thông tin" để lưu dữ liệu</li>
+                            <li class="list-group-item">Chọn ngày khác để xem hoặc chỉnh sửa</li>
+                            <li class="list-group-item">Xuất file Excel để lưu trữ hoặc in ấn</li>
+                        </ol>
+                    </div>
+                </div>
             </div>
         </div>
+        
+        <footer>
+            <p>Hệ thống Quản lý Mua hàng &copy; 2023 - Dữ liệu được đồng bộ thời gian thực với Firebase</p>
+        </footer>
     </div>
 
     <script>
-        // Firebase configuration - sử dụng thông tin từ Firebase Console của bạn
-       const firebaseConfig = {
-  apiKey: "AIzaSyBIqzq1vh-Kqb5bA9fPuOw4QU_l3zODmOY",
-  authDomain: "nguyenlieu-45afc.firebaseapp.com",
-  projectId: "nguyenlieu-45afc",
-  storageBucket: "nguyenlieu-45afc.firebasestorage.app",
-  messagingSenderId: "502474199189",
-  appId: "1:502474199189:web:8c05b3f568283d903f8b9c",
-  measurementId: "G-GTHW6WNG5V"
-};
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const analytics = firebase.analytics();
-        const db = firebase.firestore();
-        
-        // Kiểm tra kết nối Firebase
-        function setupFirebaseListeners() {
-            firebase.firestore().enableNetwork()
-                .then(() => {
-                    document.getElementById('firebase-status-indicator').style.background = '#4CAF50';
-                    document.getElementById('firebase-status-text').textContent = 'Đã kết nối Firebase';
-                })
-                .catch((error) => {
-                    document.getElementById('firebase-status-indicator').style.background = '#f44336';
-                    document.getElementById('firebase-status-text').textContent = 'Mất kết nối Firebase';
-                    console.error('Firebase connection error:', error);
-                });
-                
-            // Lắng nghe sự thay đổi trạng thái kết nối
-            firebase.firestore().disableNetwork()
-                .then(() => {
-                    // Offline mode - sẽ xử lý sau
-                });
-        }
-
-        // Mật khẩu để truy cập tính năng admin
-        const ADMIN_PASSWORD = "thaithae2025@";
-        let isAdmin = false;
-        
-        // Kiểm tra mật khẩu
-        function checkPassword() {
-            const password = document.getElementById('password-input').value;
-            const loginMessage = document.getElementById('login-message');
-            
-            if (password === ADMIN_PASSWORD) {
-                isAdmin = true;
-                document.getElementById('login-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-                showAdminFeatures();
-                setupFirebaseListeners();
-                loadDataFromFirebase();
-            } else {
-                loginMessage.textContent = 'Mật khẩu không đúng. Vui lòng thử lại.';
-            }
-        }
-        
-        // Đăng xuất
-        function logout() {
-            isAdmin = false;
-            document.getElementById('login-container').style.display = 'block';
-            document.getElementById('app-container').style.display = 'none';
-            document.getElementById('password-input').value = '';
-            document.getElementById('login-message').textContent = '';
-            hideAdminFeatures();
-        }
-        
-        // Hiển thị tính năng admin
-        function showAdminFeatures() {
-            const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => {
-                el.style.display = 'flex';
-            });
-            
-            // Thêm nút xóa cho các mục
-            addRemoveButtons();
-        }
-        
-        // Ẩn tính năng admin
-        function hideAdminFeatures() {
-            const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            // Xóa nút xóa cho các mục
-            removeRemoveButtons();
-        }
-        
-        // Thêm nút xóa cho các mục
-        function addRemoveButtons() {
-            // Thêm nút xóa cho các mục thịt
-            const meatItems = document.getElementById('meat-items');
-            const meatRows = meatItems.querySelectorAll('.item-row');
-            meatRows.forEach((row, index) => {
-                if (!row.querySelector('.btn-remove')) {
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'btn btn-remove';
-                    removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    removeBtn.onclick = () => removeItem('meat', index);
-                    row.appendChild(removeBtn);
-                }
-            });
-            
-            // Thêm nút xóa cho các mục hải sản
-            const seafoodItems = document.getElementById('seafood-items');
-            const seafoodRows = seafoodItems.querySelectorAll('.item-row');
-            seafoodRows.forEach((row, index) => {
-                if (!row.querySelector('.btn-remove')) {
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'btn btn-remove';
-                    removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                    removeBtn.onclick = () => removeItem('seafood', index);
-                    row.appendChild(removeBtn);
-                }
-            });
-        }
-        
-        // Xóa nút xóa cho các mục
-        function removeRemoveButtons() {
-            const removeButtons = document.querySelectorAll('.btn-remove');
-            removeButtons.forEach(btn => {
-                btn.remove();
-            });
-        }
-        
-        // Xóa một mục
-        function removeItem(type, index) {
-            if (!isAdmin) {
-                alert('Bạn cần đăng nhập với quyền admin để thực hiện chức năng này');
-                return;
-            }
-            
-            if (confirm('Bạn có chắc chắn muốn xóa mục này?')) {
-                if (type === 'meat') {
-                    meatItems.splice(index, 1);
-                } else {
-                    seafoodItems.splice(index, 1);
-                }
-                
-                saveItems();
-                renderItems();
-            }
-        }
-        
-        // Danh sách nguyên liệu mặc định
-        const defaultItems = {
-            meat: ["Ba rọi", "Thịt bằm", "Thịt gà", "Sườn cay", "Khác"],
-            seafood: ["Tôm", "Mực", "Bạch tuộc", "Sò huyết", "Cá", "Đậu hủ", "Bún", "Khác"]
+        // Cấu hình Firebase - Sử dụng cấu hình của bạn
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOPvcf8_zKxkMAUeI56QlNPXxDtz-jaJE",
+            authDomain: "nguyenlieu-9de17.firebaseapp.com",
+            projectId: "nguyenlieu-9de17",
+            storageBucket: "nguyenlieu-9de17.firebasestorage.app",
+            messagingSenderId: "1083805342364",
+            appId: "1:1083805342364:web:fd99aac7d0174ea008eb59",
+            measurementId: "G-0RPVKN6M5T"
         };
         
-        // Lấy dữ liệu từ localStorage hoặc sử dụng mặc định
-        let meatItems = JSON.parse(localStorage.getItem('meatItems')) || defaultItems.meat;
-        let seafoodItems = JSON.parse(localStorage.getItem('seafoodItems')) || defaultItems.seafood;
+        // Khởi tạo Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
         
-        // Lưu dữ liệu vào localStorage
-        function saveItems() {
-            localStorage.setItem('meatItems', JSON.stringify(meatItems));
-            localStorage.setItem('seafoodItems', JSON.stringify(seafoodItems));
-            updateItemsCount();
-        }
+        // Biến toàn cục
+        let purchaseData = {};
+        let unsubscribe = null;
         
-        // Cập nhật số lượng mục
-        function updateItemsCount() {
-            document.getElementById('meat-count').textContent = meatItems.length + " mục";
-            document.getElementById('seafood-count').textContent = seafoodItems.length + " mục";
-        }
-        
-        // Hiển thị các mục nhập liệu
-        function renderItems() {
-            renderItemSection('meat', meatItems);
-            renderItemSection('seafood', seafoodItems);
-            updateItemsCount();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Thiết lập ngày mặc định là ngày hôm nay
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('selectedDate').value = today;
+            document.getElementById('viewDate').value = today;
             
-            // Thêm nút xóa nếu là admin
-            if (isAdmin) {
-                addRemoveButtons();
-            }
-        }
-        
-        // Hiển thị một phần tử nhập liệu
-        function renderItemSection(type, items) {
-            const container = document.getElementById(`${type}-items`);
-            container.innerHTML = '';
-            
-            items.forEach((item, index) => {
-                const row = document.createElement('div');
-                row.className = 'item-row';
-                row.innerHTML = `
-                    <div class="item-name">${item}:</div>
-                    <input type="number" placeholder="Số kg" min="0" step="0.01" 
-                           onchange="calculateItemTotal('${type}', ${index})" 
-                           id="${type}-weight-${index}" class="item-weight">
-                    <input type="number" placeholder="Giá tiền (VNĐ)" min="0" 
-                           onchange="calculateItemTotal('${type}', ${index})" 
-                           id="${type}-price-${index}" class="item-price">
-                    <input type="text" placeholder="Tổng" readonly 
-                           id="${type}-total-${index}" class="item-total">
-                `;
-                container.appendChild(row);
-            });
-        }
-        
-        // Tính tổng cho một mục
-        function calculateItemTotal(type, index) {
-            const weight = parseFloat(document.getElementById(`${type}-weight-${index}`).value) || 0;
-            const price = parseFloat(document.getElementById(`${type}-price-${index}`).value) || 0;
-            const total = weight * price;
-            
-            document.getElementById(`${type}-total-${index}`).value = total.toLocaleString('vi-VN') + ' VNĐ';
-            calculateSectionTotal(type);
-        }
-        
-        // Tính tổng cho cả phần
-        function calculateSectionTotal(type) {
-            const items = type === 'meat' ? meatItems : seafoodItems;
-            let sectionTotal = 0;
-            
-            for (let i = 0; i < items.length; i++) {
-                const weight = parseFloat(document.getElementById(`${type}-weight-${i}`).value) || 0;
-                const price = parseFloat(document.getElementById(`${type}-price-${i}`).value) || 0;
-                sectionTotal += weight * price;
+            // Hiển thị thông báo
+            function showNotification(message, isSuccess = true) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.style.backgroundColor = isSuccess ? '#2ecc71' : '#e74c3c';
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
             }
             
-            document.getElementById(`${type}-total`).textContent = 
-                `Tổng giá trị ${type === 'meat' ? 'thịt' : 'hải sản'}: ${sectionTotal.toLocaleString('vi-VN')} VNĐ`;
-        }
-        
-        // Thêm mục mới vào danh sách
-        function addCustomItem(type) {
-            if (!isAdmin) {
-                alert('Bạn cần đăng nhập với quyền admin để thực hiện chức năng này');
-                return;
+            // Thiết lập lắng nghe dữ liệu thời gian thực
+            function setupRealtimeListener() {
+                unsubscribe = db.collection('purchases').onSnapshot((snapshot) => {
+                    purchaseData = {};
+                    snapshot.forEach((doc) => {
+                        purchaseData[doc.id] = doc.data();
+                    });
+                    
+                    // Cập nhật giao diện
+                    document.getElementById('viewDate').dispatchEvent(new Event('change'));
+                    document.getElementById('monthSelector').dispatchEvent(new Event('change'));
+                    
+                    // Cập nhật trạng thái đồng bộ
+                    document.getElementById('syncStatus').className = 'sync-status sync-online';
+                    document.getElementById('syncMessage').textContent = 'Dữ liệu đã đồng bộ';
+                }, (error) => {
+                    console.error('Lỗi khi lắng nghe dữ liệu:', error);
+                    document.getElementById('syncStatus').className = 'sync-status sync-offline';
+                    document.getElementById('syncMessage').textContent = 'Mất kết nối, đang thử lại...';
+                });
             }
             
-            const inputElement = document.getElementById(`new-${type}-item`);
-            const newItem = inputElement.value.trim();
+            // Tính toán thành tiền khi số lượng hoặc đơn giá thay đổi
+            function setupCalculation() {
+                document.querySelectorAll('.food-item').forEach(item => {
+                    const quantityInput = item.querySelector('input[placeholder*="Số lượng"]');
+                    const priceInput = item.querySelector('input[placeholder*="Đơn giá"]');
+                    const totalInput = item.querySelector('input[placeholder*="Thành tiền"]');
+                    
+                    if (quantityInput && priceInput && totalInput) {
+                        const calculateTotal = () => {
+                            const quantity = parseFloat(quantityInput.value) || 0;
+                            const price = parseFloat(priceInput.value) || 0;
+                            totalInput.value = (quantity * price).toLocaleString('vi-VN');
+                        };
+                        
+                        quantityInput.addEventListener('input', calculateTotal);
+                        priceInput.addEventListener('input', calculateTotal);
+                    }
+                });
+            }
             
-            if (newItem) {
-                if (type === 'meat') {
-                    meatItems.push(newItem);
-                } else {
-                    seafoodItems.push(newItem);
+            // Lưu dữ liệu lên Firebase
+            document.getElementById('saveData').addEventListener('click', function() {
+                const selectedDate = document.getElementById('selectedDate').value;
+                if (!selectedDate) {
+                    showNotification('Vui lòng chọn ngày!', false);
+                    return;
                 }
                 
-                saveItems();
-                renderItems();
-                inputElement.value = '';
-            } else {
-                alert('Vui lòng nhập tên nguyên liệu!');
-            }
-        }
-        
-        // Lưu dữ liệu theo ngày
-        function saveData() {
-            const selectedDate = document.getElementById('selected-date').value;
-            if (!selectedDate) {
-                alert('Vui lòng chọn ngày!');
-                return;
-            }
-            
-            const meatData = collectData('meat', meatItems);
-            const seafoodData = collectData('seafood', seafoodItems);
-            
-            const dailyData = {
-                date: selectedDate,
-                meat: meatData,
-                seafood: seafoodData,
-                total: meatData.total + seafoodData.total
-            };
-            
-            // Lưu vào localStorage
-            const allData = JSON.parse(localStorage.getItem('dailyData')) || {};
-            allData[selectedDate] = dailyData;
-            localStorage.setItem('dailyData', JSON.stringify(allData));
-            
-            // Lưu vào Firebase nếu là admin
-            if (isAdmin) {
-                saveToFirebase(dailyData);
-            }
-            
-            alert(`Đã lưu dữ liệu cho ngày ${selectedDate}`);
-            updateCalendar();
-        }
-        
-        // Lưu dữ liệu lên Firebase
-        function saveToFirebase(dailyData) {
-            db.collection("dailyData").doc(dailyData.date).set(dailyData)
+                // Lấy dữ liệu thịt
+                const meatItems = {};
+                document.querySelectorAll('#meatItems .food-item').forEach(item => {
+                    const nameInput = item.querySelector('input[data-name]');
+                    const quantityInput = item.querySelector('input[placeholder*="Số lượng"]');
+                    const priceInput = item.querySelector('input[placeholder*="Đơn giá"]');
+                    
+                    if (nameInput && quantityInput && priceInput && quantityInput.value) {
+                        const name = nameInput.dataset.name;
+                        meatItems[name] = {
+                            quantity: parseFloat(quantityInput.value),
+                            price: parseFloat(priceInput.value) || 0,
+                            total: (parseFloat(quantityInput.value) * (parseFloat(priceInput.value) || 0))
+                        };
+                    }
+                });
+                
+                // Lấy dữ liệu hải sản
+                const seafoodItems = {};
+                document.querySelectorAll('#seafoodItems .food-item').forEach(item => {
+                    const nameInput = item.querySelector('input[data-name]');
+                    const quantityInput = item.querySelector('input[placeholder*="Số lượng"]');
+                    const priceInput = item.querySelector('input[placeholder*="Đơn giá"]');
+                    
+                    if (nameInput && quantityInput && priceInput && quantityInput.value) {
+                        const name = nameInput.dataset.name;
+                        seafoodItems[name] = {
+                            quantity: parseFloat(quantityInput.value),
+                            price: parseFloat(priceInput.value) || 0,
+                            total: (parseFloat(quantityInput.value) * (parseFloat(priceInput.value) || 0))
+                        };
+                    }
+                });
+                
+                // Lưu dữ liệu lên Firebase
+                db.collection('purchases').doc(selectedDate).set({
+                    meat: meatItems,
+                    seafood: seafoodItems,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true })
                 .then(() => {
-                    console.log("Document successfully written to Firebase!");
+                    showNotification('Đã lưu dữ liệu cho ngày ' + selectedDate);
+                    
+                    // Làm mới form
+                    document.querySelectorAll('input[type="number"]').forEach(input => {
+                        if (!input.readOnly) {
+                            input.value = '';
+                        }
+                    });
                 })
                 .catch((error) => {
-                    console.error("Error writing document to Firebase: ", error);
-                    alert("Có lỗi khi lưu lên Firebase. Dữ liệu vẫn được lưu cục bộ.");
+                    showNotification('Lỗi khi lưu dữ liệu: ' + error.message, false);
                 });
-        }
-        
-        // Tải dữ liệu từ Firebase
-        function loadDataFromFirebase() {
-            if (!isAdmin) return;
-            
-            db.collection("dailyData").get().then((querySnapshot) => {
-                const allData = JSON.parse(localStorage.getItem('dailyData')) || {};
-                
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    allData[data.date] = data;
-                });
-                
-                localStorage.setItem('dailyData', JSON.stringify(allData));
-                console.log("Data loaded from Firebase successfully!");
-                updateCalendar();
-            }).catch((error) => {
-                console.error("Error loading data from Firebase: ", error);
-            });
-        }
-        
-        // Xóa dữ liệu của một ngày
-        function deleteDateData() {
-            if (!isAdmin) {
-                alert('Bạn cần đăng nhập với quyền admin để thực hiện chức năng này');
-                return;
-            }
-            
-            const selectedDate = document.getElementById('selected-date').value;
-            if (!selectedDate) {
-                alert('Vui lòng chọn ngày!');
-                return;
-            }
-            
-            if (confirm(`Bạn có chắc chắn muốn xóa dữ liệu của ngày ${selectedDate}?`)) {
-                // Xóa từ localStorage
-                const allData = JSON.parse(localStorage.getItem('dailyData')) || {};
-                delete allData[selectedDate];
-                localStorage.setItem('dailyData', JSON.stringify(allData));
-                
-                // Xóa từ Firebase
-                db.collection("dailyData").doc(selectedDate).delete().then(() => {
-                    console.log("Document successfully deleted from Firebase!");
-                    alert(`Đã xóa dữ liệu của ngày ${selectedDate}`);
-                    updateCalendar();
-                }).catch((error) => {
-                    console.error("Error removing document from Firebase: ", error);
-                    alert("Có lỗi khi xóa dữ liệu từ Firebase. Dữ liệu đã được xóa cục bộ.");
-                });
-            }
-        }
-        
-        // Thu thập dữ liệu từ form
-        function collectData(type, items) {
-            const data = [];
-            let totalValue = 0;
-            
-            items.forEach((item, index) => {
-                const weight = parseFloat(document.getElementById(`${type}-weight-${index}`).value) || 0;
-                const price = parseFloat(document.getElementById(`${type}-price-${index}`).value) || 0;
-                const total = weight * price;
-                
-                if (weight > 0 || price > 0) {
-                    data.push({
-                        "name": item,
-                        "weight": weight,
-                        "price": price,
-                        "total": total
-                    });
-                    totalValue += total;
-                }
             });
             
-            return {
-                "items": data,
-                "total": totalValue
-            };
-        }
-        
-        // Xuất dữ liệu ra Excel
-        function exportToExcel() {
-            if (!isAdmin) {
-                alert('Bạn cần đăng nhập với quyền admin để thực hiện chức năng này');
-                return;
-            }
-            
-            const selectedDate = document.getElementById('selected-date').value;
-            if (!selectedDate) {
-                alert('Vui lòng chọn ngày!');
-                return;
-            }
-            
-            // Thu thập dữ liệu
-            const meatData = collectData('meat', meatItems);
-            const seafoodData = collectData('seafood', seafoodItems);
-            
-            // Tạo workbook
-            const wb = XLSX.utils.book_new();
-            
-            // Tạo worksheet cho thịt
-            const meatWSData = [
-                ["THỊT", "", "", ""],
-                ["Nguyên liệu", "Số kg", "Giá tiền (VNĐ)", "Tổng (VNĐ)"]
-            ];
-            
-            meatData.items.forEach(item => {
-                meatWSData.push([item.name, item.weight, item.price, item.total]);
-            });
-            
-            meatWSData.push(["TỔNG CỘNG", "", "", meatData.total]);
-            
-            const meatWS = XLSX.utils.aoa_to_sheet(meatWSData);
-            XLSX.utils.book_append_sheet(wb, meatWS, "Thịt");
-            
-            // Tạo worksheet cho hải sản
-            const seafoodWSData = [
-                ["HẢI SẢN", "", "", ""],
-                ["Nguyên liệu", "Số kg", "Giá tiền (VNĐ)", "Tổng (VNĐ)"]
-            ];
-            
-            seafoodData.items.forEach(item => {
-                seafoodWSData.push([item.name, item.weight, item.price, item.total]);
-            });
-            
-            seafoodWSData.push(["TỔNG CỘNG", "", "", seafoodData.total]);
-            
-            const seafoodWS = XLSX.utils.aoa_to_sheet(seafoodWSData);
-            XLSX.utils.book_append_sheet(wb, seafoodWS, "Hải sản");
-            
-            // Xuất file
-            XLSX.writeFile(wb, `Nguyen_lieu_${selectedDate}.xlsx`);
-        }
-        
-        // Xuất tổng tháng ra Excel
-        function exportMonthToExcel() {
-            if (!isAdmin) {
-                alert('Bạn cần đăng nhập với quyền admin để thực hiện chức năng này');
-                return;
-            }
-            
-            const month = parseInt(document.getElementById('month-select').value);
-            const year = parseInt(document.getElementById('year-select').value);
-            
-            // Lấy dữ liệu tháng
-            const monthData = getMonthData(month, year);
-            
-            // Tạo workbook
-            const wb = XLSX.utils.book_new();
-            
-            // Tạo worksheet tổng hợp
-            const summaryWSData = [
-                ["TỔNG HỢP NGUYÊN LIỆU THÁNG " + (month + 1) + "/" + year, "", "", ""],
-                ["Ngày", "Tổng thịt (VNĐ)", "Tổng hải sản (VNĐ)", "Tổng cộng (VNĐ)"]
-            ];
-            
-            let totalMeat = 0;
-            let totalSeafood = 0;
-            let overallTotal = 0;
-            
-            monthData.forEach(day => {
-                summaryWSData.push([
-                    day.date,
-                    day.meatTotal,
-                    day.seafoodTotal,
-                    day.total
-                ]);
+            // Xem dữ liệu theo ngày
+            document.getElementById('viewDate').addEventListener('change', function() {
+                const viewDate = this.value;
+                const tableBody = document.querySelector('#dataTable tbody');
+                tableBody.innerHTML = '';
                 
-                totalMeat += day.meatTotal;
-                totalSeafood += day.seafoodTotal;
-                overallTotal += day.total;
-            });
-            
-            summaryWSData.push(["TỔNG THÁNG", totalMeat, totalSeafood, overallTotal]);
-            
-            const summaryWS = XLSX.utils.aoa_to_sheet(summaryWSData);
-            XLSX.utils.book_append_sheet(wb, summaryWS, "Tổng hợp tháng");
-            
-            // Xuất file
-            XLSX.writeFile(wb, `Tong_hop_nguyen_lieu_${month + 1}_${year}.xlsx`);
-        }
-        
-        // Hiển/ẩn lịch sử
-        function toggleHistory() {
-            const historyPanel = document.getElementById('history-panel');
-            if (historyPanel.style.display === 'none') {
-                historyPanel.style.display = 'block';
-                updateCalendar();
-            } else {
-                historyPanel.style.display = 'none';
-            }
-        }
-        
-        // Cập nhật lịch
-        function updateCalendar() {
-            const monthSelect = document.getElementById('month-select');
-            const yearSelect = document.getElementById('year-select');
-            
-            const month = parseInt(monthSelect.value);
-            const year = parseInt(yearSelect.value);
-            
-            // Cập nhật năm trong dropdown
-            const currentYear = new Date().getFullYear();
-            if (yearSelect.options.length === 0) {
-                for (let y = currentYear - 5; y <= currentYear + 1; y++) {
-                    const option = document.createElement('option');
-                    option.value = y;
-                    option.textContent = y;
-                    option.selected = y === currentYear;
-                    yearSelect.appendChild(option);
-                }
-            }
-            
-            // Lấy dữ liệu tháng
-            const monthData = getMonthData(month, year);
-            
-            // Hiển thị lịch
-            renderCalendar(month, year, monthData);
-            
-            // Hiển thị tổng kết tháng
-            renderMonthSummary(monthData);
-            
-            // Hiển thị lịch sử chi tiết
-            renderHistoryList(monthData);
-        }
-        
-        // Lấy dữ liệu tháng
-        function getMonthData(month, year) {
-            const allData = JSON.parse(localStorage.getItem('dailyData')) || {};
-            const monthData = [];
-            
-            for (const date in allData) {
-                const dateObj = new Date(date);
-                if (dateObj.getMonth() === month && dateObj.getFullYear() === year) {
-                    const data = allData[date];
-                    monthData.push({
-                        date: date,
-                        meatTotal: data.meat.total,
-                        seafoodTotal: data.seafood.total,
-                        total: data.total
-                    });
-                }
-            }
-            
-            // Sắp xếp theo ngày
-            monthData.sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            return monthData;
-        }
-        
-        // Hiển thị lịch
-        function renderCalendar(month, year, monthData) {
-            const calendarEl = document.getElementById('calendar');
-            calendarEl.innerHTML = '';
-            
-            // Tạo header cho lịch
-            const header = document.createElement('div');
-            header.className = 'calendar-header';
-            header.textContent = `Tháng ${month + 1} năm ${year}`;
-            calendarEl.appendChild(header);
-            
-            // Tên các ngày trong tuần
-            const daysOfWeek = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-            daysOfWeek.forEach(day => {
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day-name';
-                dayEl.textContent = day;
-                calendarEl.appendChild(dayEl);
-            });
-            
-            // Ngày đầu tiên của tháng
-            const firstDay = new Date(year, month, 1);
-            // Ngày cuối cùng của tháng
-            const lastDay = new Date(year, month + 1, 0);
-            
-            // Xác định ngày bắt đầu (Chủ nhật đầu tiên)
-            let startDate = new Date(firstDay);
-            startDate.setDate(firstDay.getDate() - firstDay.getDay());
-            
-            // Tạo lịch
-            for (let i = 0; i < 42; i++) {
-                const currentDate = new Date(startDate);
-                currentDate.setDate(startDate.getDate() + i);
-                
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
-                
-                // Kiểm tra xem ngày này có trong tháng đang xem không
-                if (currentDate.getMonth() === month && currentDate.getFullYear() === year) {
-                    dayEl.textContent = currentDate.getDate();
+                if (purchaseData[viewDate]) {
+                    const data = purchaseData[viewDate];
+                    let totalAmount = 0;
                     
-                    // Kiểm tra xem ngày này có dữ liệu không
-                    const dateString = formatDate(currentDate);
-                    const hasData = monthData.some(d => d.date === dateString);
-                    
-                    if (hasData) {
-                        dayEl.classList.add('has-data');
+                    // Hiển thị thịt
+                    if (data.meat) {
+                        for (const [item, details] of Object.entries(data.meat)) {
+                            if (details.quantity > 0) {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${item}</td>
+                                    <td>${details.quantity} kg</td>
+                                    <td>${details.price.toLocaleString('vi-VN')}</td>
+                                    <td>${details.total.toLocaleString('vi-VN')}</td>
+                                `;
+                                tableBody.appendChild(row);
+                                totalAmount += details.total;
+                            }
+                        }
                     }
                     
-                    // Thêm sự kiện click để xem dữ liệu ngày
-                    dayEl.onclick = () => {
-                        document.getElementById('selected-date').value = dateString;
-                        loadDateData(dateString);
-                    };
+                    // Hiển thị hải sản
+                    if (data.seafood) {
+                        for (const [item, details] of Object.entries(data.seafood)) {
+                            if (details.quantity > 0) {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${item}</td>
+                                    <td>${details.quantity} kg</td>
+                                    <td>${details.price.toLocaleString('vi-VN')}</td>
+                                    <td>${details.total.toLocaleString('vi-VN')}</td>
+                                `;
+                                tableBody.appendChild(row);
+                                totalAmount += details.total;
+                            }
+                        }
+                    }
+                    
+                    // Hiển thị tổng
+                    const totalRow = document.createElement('tr');
+                    totalRow.className = 'total-row';
+                    totalRow.innerHTML = `
+                        <td colspan="3"><strong>Tổng cộng</strong></td>
+                        <td><strong>${totalAmount.toLocaleString('vi-VN')} VND</strong></td>
+                    `;
+                    tableBody.appendChild(totalRow);
+                    
+                    // Hiển thị thông tin cập nhật
+                    const infoRow = document.createElement('tr');
+                    infoRow.innerHTML = `
+                        <td colspan="4" class="text-muted small">
+                            Cập nhật lần cuối: 
+                            ${data.updatedAt ? new Date(data.updatedAt.toDate()).toLocaleString('vi-VN') : 'N/A'}
+                        </td>
+                    `;
+                    tableBody.appendChild(infoRow);
                 } else {
-                    dayEl.style.visibility = 'hidden';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="4" class="text-center">Không có dữ liệu cho ngày này</td>
+                    `;
+                    tableBody.appendChild(row);
                 }
-                
-                calendarEl.appendChild(dayEl);
-            }
-        }
-        
-        // Hiển thị tổng kết tháng
-        function renderMonthSummary(monthData) {
-            let daysWithData = 0;
-            let totalMeat = 0;
-            let totalSeafood = 0;
-            let overallTotal = 0;
-            
-            monthData.forEach(day => {
-                daysWithData++;
-                totalMeat += day.meatTotal;
-                totalSeafood += day.seafoodTotal;
-                overallTotal += day.total;
             });
             
-            document.getElementById('summary-days').textContent = daysWithData;
-            document.getElementById('summary-meat').textContent = totalMeat.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById('summary-seafood').textContent = totalSeafood.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById('summary-total').textContent = overallTotal.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById('history-count').textContent = daysWithData + ' ngày có dữ liệu';
-        }
-        
-        // Hiển thị lịch sử chi tiết
-        function renderHistoryList(monthData) {
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = '';
+            // Kích hoạt xem dữ liệu ngày hiện tại
+            document.getElementById('viewDate').dispatchEvent(new Event('change'));
             
-            monthData.forEach(day => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'history-item';
-                historyItem.innerHTML = `
-                    <span class="history-date">${formatDisplayDate(day.date)}</span>
-                    <span class="history-total">${day.total.toLocaleString('vi-VN')} VNĐ</span>
+            // Xóa dữ liệu theo ngày
+            document.getElementById('deleteDate').addEventListener('click', function() {
+                const viewDate = document.getElementById('viewDate').value;
+                
+                if (purchaseData[viewDate]) {
+                    if (confirm('Bạn có chắc chắn muốn xóa dữ liệu ngày ' + viewDate + '?')) {
+                        db.collection('purchases').doc(viewDate).delete()
+                            .then(() => {
+                                showNotification('Đã xóa dữ liệu ngày ' + viewDate);
+                            })
+                            .catch((error) => {
+                                showNotification('Lỗi khi xóa dữ liệu: ' + error.message, false);
+                            });
+                    }
+                } else {
+                    showNotification('Không có dữ liệu để xóa cho ngày này', false);
+                }
+            });
+            
+            // Tính tổng
+            document.getElementById('calculateTotal').addEventListener('click', function() {
+                const viewDate = document.getElementById('viewDate').value;
+                let totalMeat = 0;
+                let totalSeafood = 0;
+                let totalAmount = 0;
+                
+                if (purchaseData[viewDate]) {
+                    const data = purchaseData[viewDate];
+                    
+                    if (data.meat) {
+                        for (const details of Object.values(data.meat)) {
+                            totalMeat += details.quantity;
+                            totalAmount += details.total;
+                        }
+                    }
+                    
+                    if (data.seafood) {
+                        for (const details of Object.values(data.seafood)) {
+                            totalSeafood += details.quantity;
+                            totalAmount += details.total;
+                        }
+                    }
+                }
+                
+                alert(`Tổng số lượng cho ngày ${viewDate}:\nThịt: ${totalMeat.toFixed(2)} kg\nHải sản: ${totalSeafood.toFixed(2)} kg\nTổng tiền: ${totalAmount.toLocaleString('vi-VN')} VND`);
+            });
+            
+            // Thêm mặt hàng thịt mới
+            document.getElementById('addMeatBtn').addEventListener('click', function() {
+                const nameInput = document.getElementById('otherMeatName');
+                const qtyInput = document.getElementById('otherMeatQty');
+                const priceInput = document.getElementById('otherMeatPrice');
+                
+                if (!nameInput.value || !qtyInput.value) {
+                    showNotification('Vui lòng nhập đầy đủ tên và số lượng', false);
+                    return;
+                }
+                
+                const newItem = document.createElement('div');
+                newItem.className = 'food-item';
+                newItem.innerHTML = `
+                    <label class="form-label">${nameInput.value}</label>
+                    <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="${nameInput.value}" value="${qtyInput.value}" min="0" step="0.1">
+                    <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="${nameInput.value}" value="${priceInput.value}" min="0">
+                    <input type="number" class="form-control" placeholder="Thành tiền" data-name="${nameInput.value}" readonly>
                 `;
                 
-                // Thêm sự kiện click để xem dữ liệu ngày
-                historyItem.onclick = () => {
-                    document.getElementById('selected-date').value = day.date;
-                    loadDateData(day.date);
-                    document.getElementById('history-panel').style.display = 'none';
-                };
+                document.getElementById('meatItems').insertBefore(newItem, document.getElementById('meatItems').lastElementChild);
                 
-                historyList.appendChild(historyItem);
+                nameInput.value = '';
+                qtyInput.value = '';
+                priceInput.value = '';
+                
+                setupCalculation();
+                showNotification('Đã thêm mặt hàng thịt mới');
             });
-        }
-        
-        // Tải dữ liệu của một ngày cụ thể
-        function loadDateData(date) {
-            const allData = JSON.parse(localStorage.getItem('dailyData')) || {};
-            const dailyData = allData[date];
             
-            if (dailyData) {
-                // Hiển thị dữ liệu thịt
-                loadSectionData('meat', dailyData.meat.items);
+            // Thêm mặt hàng hải sản mới
+            document.getElementById('addSeafoodBtn').addEventListener('click', function() {
+                const nameInput = document.getElementById('otherSeafoodName');
+                const qtyInput = document.getElementById('otherSeafoodQty');
+                const priceInput = document.getElementById('otherSeafoodPrice');
                 
-                // Hiển thị dữ liệu hải sản
-                loadSectionData('seafood', dailyData.seafood.items);
-                
-                // Cập nhật tổng
-                calculateSectionTotal('meat');
-                calculateSectionTotal('seafood');
-            } else {
-                // Xóa dữ liệu cũ nếu không tìm thấy
-                clearSectionData('meat');
-                clearSectionData('seafood');
-            }
-        }
-        
-        // Tải dữ liệu cho một phần
-        function loadSectionData(type, items) {
-            items.forEach(item => {
-                // Tìm index của item
-                const itemsArray = type === 'meat' ? meatItems : seafoodItems;
-                const index = itemsArray.findIndex(i => i === item.name);
-                
-                if (index !== -1) {
-                    document.getElementById(`${type}-weight-${index}`).value = item.weight;
-                    document.getElementById(`${type}-price-${index}`).value = item.price;
-                    document.getElementById(`${type}-total-${index}`).value = item.total.toLocaleString('vi-VN') + ' VNĐ';
+                if (!nameInput.value || !qtyInput.value) {
+                    showNotification('Vui lòng nhập đầy đủ tên và số lượng', false);
+                    return;
                 }
+                
+                const newItem = document.createElement('div');
+                newItem.className = 'food-item';
+                newItem.innerHTML = `
+                    <label class="form-label">${nameInput.value}</label>
+                    <input type="number" class="form-control" placeholder="Số lượng (kg)" data-name="${nameInput.value}" value="${qtyInput.value}" min="0" step="0.1">
+                    <input type="number" class="form-control price-input" placeholder="Đơn giá" data-name="${nameInput.value}" value="${priceInput.value}" min="0">
+                    <input type="number" class="form-control" placeholder="Thành tiền" data-name="${nameInput.value}" readonly>
+                `;
+                
+                document.getElementById('seafoodItems').insertBefore(newItem, document.getElementById('seafoodItems').lastElementChild);
+                
+                nameInput.value = '';
+                qtyInput.value = '';
+                priceInput.value = '';
+                
+                setupCalculation();
+                showNotification('Đã thêm mặt hàng hải sản mới');
             });
-        }
-        
-        // Xóa dữ liệu của một phần
-        function clearSectionData(type) {
-            const items = type === 'meat' ? meatItems : seafoodItems;
             
-            for (let i = 0; i < items.length; i++) {
-                document.getElementById(`${type}-weight-${i}`).value = '';
-                document.getElementById(`${type}-price-${i}`).value = '';
-                document.getElementById(`${type}-total-${i}`).value = '';
-            }
-        }
-        
-        // Định dạng ngày thành YYYY-MM-DD
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        // Định dạng ngày hiển thị DD/MM/YYYY
-        function formatDisplayDate(dateString) {
-            const [year, month, day] = dateString.split('-');
-            return `${day}/${month}/${year}`;
-        }
-        
-        // Khởi tạo ứng dụng
-        function initApp() {
-            // Đặt ngày mặc định là hôm nay
-            const today = new Date();
-            document.getElementById('selected-date').value = formatDate(today);
-            document.getElementById('current-date-display').textContent = formatDisplayDate(formatDate(today));
+            // Xuất file Excel
+            document.getElementById('exportExcel').addEventListener('click', function() {
+                // Lấy tháng được chọn
+                const month = document.getElementById('monthSelector').value;
+                
+                if (!month) {
+                    showNotification('Vui lòng chọn tháng để xuất dữ liệu', false);
+                    return;
+                }
+                
+                // Lọc dữ liệu theo tháng
+                const monthData = {};
+                for (const [date, data] of Object.entries(purchaseData)) {
+                    if (date.startsWith(month)) {
+                        monthData[date] = data;
+                    }
+                }
+                
+                // Tạo workbook
+                const wb = XLSX.utils.book_new();
+                
+                // Tạo worksheet
+                const wsData = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)', 'Loại']];
+                
+                for (const [date, data] of Object.entries(monthData)) {
+                    if (data.meat) {
+                        for (const [item, details] of Object.entries(data.meat)) {
+                            if (details.quantity > 0) {
+                                wsData.push([date, item, details.quantity, details.price, details.total, 'Thịt']);
+                            }
+                        }
+                    }
+                    
+                    if (data.seafood) {
+                        for (const [item, details] of Object.entries(data.seafood)) {
+                            if (details.quantity > 0) {
+                                wsData.push([date, item, details.quantity, details.price, details.total, 'Hải sản']);
+                            }
+                        }
+                    }
+                }
+                
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                
+                // Thêm worksheet vào workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Mua hàng tháng');
+                
+                // Xuất file
+                XLSX.writeFile(wb, `Mua_hang_${month}.xlsx`);
+                
+                showNotification('Đã xuất file Excel thành công');
+            });
             
-            // Hiển thị các mục nhập liệu
-            renderItems();
+            // Cập nhật thống kê tháng
+            document.getElementById('monthSelector').addEventListener('change', function() {
+                const month = this.value;
+                let totalDays = 0;
+                let totalMeat = 0;
+                let totalSeafood = 0;
+                let totalAmount = 0;
+                
+                for (const [date, data] of Object.entries(purchaseData)) {
+                    if (date.startsWith(month)) {
+                        totalDays++;
+                        
+                        if (data.meat) {
+                            for (const details of Object.values(data.meat)) {
+                                totalMeat += details.quantity;
+                                totalAmount += details.total;
+                            }
+                        }
+                        
+                        if (data.seafood) {
+                            for (const details of Object.values(data.seafood)) {
+                                totalSeafood += details.quantity;
+                                totalAmount += details.total;
+                            }
+                        }
+                    }
+                }
+                
+                document.getElementById('totalDays').textContent = totalDays;
+                document.getElementById('totalMeat').textContent = totalMeat.toFixed(2) + ' kg';
+                document.getElementById('totalSeafood').textContent = totalSeafood.toFixed(2) + ' kg';
+                document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('vi-VN') + ' VND';
+            });
             
-            // Ẩn tính năng admin nếu chưa đăng nhập
-            if (!isAdmin) {
-                hideAdminFeatures();
-            }
+            // Thiết lập tháng hiện tại
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('monthSelector').value = currentMonth;
+            document.getElementById('monthSelector').dispatchEvent(new Event('change'));
             
-            // Cập nhật dropdown tháng/năm
-            const currentMonth = today.getMonth();
-            document.getElementById('month-select').value = currentMonth;
-        }
-        
-        // Chạy ứng dụng khi trang được tải
-        window.onload = initApp;
+            // Thiết lập tính toán thành tiền
+            setupCalculation();
+            
+            // Thiết lập lắng nghe dữ liệu thời gian thực
+            setupRealtimeListener();
+        });
     </script>
 </body>
 </html>
