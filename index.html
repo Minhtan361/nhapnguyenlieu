@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minhtan361 - Firebase</title>
+    <title>Minhtan361</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -312,6 +312,12 @@
                             </div>
                         </div>
                         
+                        <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-primary btn-lg" id="saveMeatData">
+                                <i class="fas fa-drumstick-bite me-2"></i>Lưu thông tin Thịt
+                            </button>
+                        </div>
+
                         <h4 class="section-title">Hải sản</h4>
                         <div id="seafoodItems">
                             <div class="food-item">
@@ -362,8 +368,14 @@
                         </div>
                         
                         <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-primary btn-lg" id="saveSeafoodData">
+                                <i class="fas fa-fish me-2"></i>Lưu thông tin Hải sản
+                            </button>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4" style="display: none;">
                             <button class="btn btn-primary btn-lg" id="saveData">
-                                <i class="fas fa-save me-2"></i>Lưu thông tin
+                                <i class="fas fa-save me-2"></i>Lưu toàn bộ thông tin
                             </button>
                         </div>
                     </div>
@@ -468,7 +480,7 @@
         </div>
         
         <footer>
-            <p>minhtan361 - THAITHAE &copy; 2023 - Dữ liệu được đồng bộ thời gian thực với Firebase</p>
+            <p>minhtan361 - THAITHAE &copy; 2025 - Dữ liệu được đồng bộ thời gian thực pls đừng sao chép của tôi </p>
         </footer>
     </div>
 
@@ -495,7 +507,7 @@
         let isEditMode = false;
         let currentEditingDate = null;
         
-        // Hàm định dạng số tiền theo kiểu Việt Nam
+        // Hàm định dạng số tiền theo kiểu Việt Nam (cho hiển thị HTML)
         function formatCurrencyVND(amount) {
             return new Intl.NumberFormat('vi-VN').format(Math.round(amount)); // Làm tròn để tránh lỗi số lẻ
         }
@@ -618,7 +630,7 @@
                             // Chỉ tính những mặt hàng có quantity > 0
                             if (details.quantity > 0) {
                                 totalMeat += details.quantity;
-                                totalAmount += details.total;
+                                totalAmount += details.total || (details.quantity * details.price);
                             }
                         }
                     }
@@ -628,7 +640,7 @@
                             // Chỉ tính những mặt hàng có quantity > 0
                             if (details.quantity > 0) {
                                 totalSeafood += details.quantity;
-                                totalAmount += details.total;
+                                totalAmount += details.total || (details.quantity * details.price);
                             }
                         }
                     }
@@ -640,8 +652,8 @@
                 document.getElementById('totalAmount').textContent = formatCurrencyVND(totalAmount) + ' VND';
             }
             
-            // Lưu dữ liệu lên Firebase
-            document.getElementById('saveData').addEventListener('click', function() {
+            // # BỔ SUNG: HÀM LƯU RIÊNG LẺ
+            function collectAndSave(category) {
                 const selectedDate = document.getElementById('selectedDate').value;
                 if (!selectedDate) {
                     showNotification('Vui lòng chọn ngày!', false);
@@ -649,42 +661,23 @@
                 }
                 
                 let hasDataToSave = false;
+                const itemsToSave = {};
 
-                // Lấy dữ liệu thịt
-                const meatItems = {};
-                document.querySelectorAll('#meatItems .food-item').forEach(item => {
-                    const nameInput = item.querySelector('input[data-name]');
-                    const quantityInput = item.querySelector('input[placeholder*="Số lượng"]');
-                    const priceInput = item.querySelector('input[placeholder*="Đơn giá"]');
-                    
-                    if (nameInput && quantityInput && priceInput) {
-                        const quantity = parseFloat(quantityInput.value);
-                        if (quantity > 0) {
-                            const name = nameInput.dataset.name;
-                            const price = parseFloat(priceInput.value) || 0;
-                            meatItems[name] = {
-                                quantity: quantity,
-                                price: price,
-                                total: (quantity * price)
-                            };
-                            hasDataToSave = true;
-                        }
-                    }
-                });
+                // Chọn đúng phần tử chứa các mục cần lưu
+                const containerId = category === 'meat' ? '#meatItems' : '#seafoodItems';
                 
-                // Lấy dữ liệu hải sản
-                const seafoodItems = {};
-                document.querySelectorAll('#seafoodItems .food-item').forEach(item => {
+                document.querySelectorAll(`${containerId} .food-item`).forEach(item => {
                     const nameInput = item.querySelector('input[data-name]');
                     const quantityInput = item.querySelector('input[placeholder*="Số lượng"]');
                     const priceInput = item.querySelector('input[placeholder*="Đơn giá"]');
                     
                     if (nameInput && quantityInput && priceInput) {
                         const quantity = parseFloat(quantityInput.value);
+                        // Chỉ lưu những mục có số lượng > 0
                         if (quantity > 0) {
-                            const name = nameInput.dataset.name;
+                            const name = nameInput.dataset.name || nameInput.value.trim(); 
                             const price = parseFloat(priceInput.value) || 0;
-                            seafoodItems[name] = {
+                            itemsToSave[name] = {
                                 quantity: quantity,
                                 price: price,
                                 total: (quantity * price)
@@ -695,32 +688,43 @@
                 });
 
                 if (!hasDataToSave) {
-                    showNotification('Không có dữ liệu số lượng > 0 để lưu!', false);
+                    showNotification(`Không có dữ liệu số lượng > 0 để lưu trong mục ${category === 'meat' ? 'Thịt' : 'Hải sản'}!`, false);
                     return;
                 }
                 
-                // Lưu dữ liệu lên Firebase
+                // Lưu dữ liệu lên Firebase. Sử dụng merge: true để chỉ cập nhật mục 'meat' hoặc 'seafood'
                 db.collection('purchases').doc(selectedDate).set({
-                    meat: meatItems,
-                    seafood: seafoodItems,
+                    [category]: itemsToSave, // Sử dụng biến động [category]
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true })
                 .then(() => {
-                    showNotification('Đã lưu dữ liệu cho ngày ' + selectedDate);
+                    showNotification(`Đã lưu dữ liệu ${category === 'meat' ? 'Thịt' : 'Hải sản'} cho ngày ${selectedDate}`);
                     
-                    // Làm mới form (chỉ xóa input số lượng và đơn giá)
-                    document.querySelectorAll('.food-item input[type="number"]').forEach(input => {
+                    // Làm mới form (chỉ xóa input số lượng và đơn giá của mục đã lưu)
+                    document.querySelectorAll(`${containerId} .food-item input[type="number"]`).forEach(input => {
                         input.value = '';
                     });
-                    document.querySelectorAll('.food-item input[placeholder*="Thành tiền"]').forEach(input => {
+                    document.querySelectorAll(`${containerId} .food-item input[placeholder*="Thành tiền"]`).forEach(input => {
                         input.value = '';
                     });
                 })
                 .catch((error) => {
                     showNotification('Lỗi khi lưu dữ liệu: ' + error.message, false);
                 });
+            }
+            // # KẾT THÚC BỔ SUNG: HÀM LƯU RIÊNG LẺ
+
+            // Gán sự kiện cho các nút lưu mới
+            document.getElementById('saveMeatData').addEventListener('click', function() {
+                collectAndSave('meat');
             });
-            
+
+            document.getElementById('saveSeafoodData').addEventListener('click', function() {
+                collectAndSave('seafood');
+            });
+
+            // Gỡ bỏ sự kiện cho nút saveData cũ (nếu nó không bị ẩn)
+
             // Xem dữ liệu theo ngày
             document.getElementById('viewDate').addEventListener('change', function() {
                 const viewDate = this.value;
@@ -736,10 +740,11 @@
                     
                     const renderItems = (items) => {
                         for (const [item, details] of Object.entries(items)) {
+                            // Sửa lỗi nếu details.total chưa được tính
+                            const itemTotal = details.total || (details.quantity * details.price); 
+
                             if (details.quantity > 0) {
                                 const row = document.createElement('tr');
-                                // Chắc chắn rằng details.total là một số, tính lại nếu cần
-                                const itemTotal = details.total || (details.quantity * details.price); 
                                 row.innerHTML = `
                                     <td>${item}</td>
                                     <td>${details.quantity} kg</td>
@@ -1005,7 +1010,7 @@
                 updateStats(filteredData);
             });
             
-            // Xuất file Excel
+            // # BỔ SUNG: XUẤT FILE EXCEL ĐA SHEET VÀ ĐỊNH DẠNG SỐ TIỀN
             document.getElementById('exportExcel').addEventListener('click', function() {
                 const month = document.getElementById('monthSelector').value;
                 const startDateRange = document.getElementById('startDateSelector').value;
@@ -1028,6 +1033,7 @@
                 // Nếu không, xuất theo tháng
                 else if (month) {
                     exportStartDate = month + '-01';
+                    // Lấy ngày cuối cùng của tháng
                     exportEndDate = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]), 0).toISOString().split('T')[0];
                     exportName = `Thang_${month}`;
                 } else {
@@ -1047,42 +1053,86 @@
                     return;
                 }
                 
-                // Chuẩn bị dữ liệu cho Excel
-                const wsData = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)']];
+                // Chuẩn bị dữ liệu cho Excel (3 sheets)
+                let wsDataTotal = [['Ngày', 'Tổng Chi Phí (VND)']];
+                let wsDataMeat = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)']];
+                let wsDataSeafood = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)']];
                 
                 for (const [date, data] of Object.entries(filteredData)) {
-                    const processItems = (items) => {
+                    let dailyTotal = 0;
+                    
+                    const processItems = (items, sheetData) => {
                         for (const [item, details] of Object.entries(items)) {
                             if (details.quantity > 0) {
-                                // Sử dụng giá trị tuyệt đối để tránh NaN hoặc lỗi
+                                
                                 const finalTotal = details.total || (details.quantity * details.price); 
-                                wsData.push([
+                                dailyTotal += finalTotal;
+                                sheetData.push([
                                     date,
                                     item,
                                     details.quantity,
                                     details.price,
-                                    Math.round(finalTotal) // Làm tròn tiền trước khi xuất
+                                    Math.round(finalTotal) // Tiền được làm tròn
                                 ]);
                             }
                         }
                     }
 
-                    if (data.meat) processItems(data.meat);
-                    if (data.seafood) processItems(data.seafood);
+                    if (data.meat) processItems(data.meat, wsDataMeat);
+                    if (data.seafood) processItems(data.seafood, wsDataSeafood);
+                    
+                    // Thêm vào sheet Tổng Chi Phí
+                    wsDataTotal.push([
+                        date,
+                        Math.round(dailyTotal)
+                    ]);
                 }
                 
-                // Tạo worksheet
-                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                
-                // Tạo workbook và thêm worksheet
+                // Tạo workbook
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, 'Dữ liệu mua hàng');
+                
+                // SHEET 1: TỔNG CHI PHÍ
+                const wsTotal = XLSX.utils.aoa_to_sheet(wsDataTotal);
+                XLSX.utils.book_append_sheet(wb, wsTotal, '01. Tong_Chi_Phi');
+                
+                // SHEET 2: THỊT
+                const wsMeat = XLSX.utils.aoa_to_sheet(wsDataMeat);
+                XLSX.utils.book_append_sheet(wb, wsMeat, '02. Chi_Tiet_Thit');
+                
+                // SHEET 3: HẢI SẢN
+                const wsSeafood = XLSX.utils.aoa_to_sheet(wsDataSeafood);
+                XLSX.utils.book_append_sheet(wb, wsSeafood, '03. Chi_Tiet_Hai_San');
+
+                // Tùy chỉnh định dạng số tiền VND (200.000)
+                const numberFormat = '#,##0'; 
+                
+                // Áp dụng định dạng cho các cột tiền tệ
+                const applyNumberFormat = (ws, cols) => {
+                    if (!ws['!ref']) return;
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    for(let R = range.s.r + 1; R <= range.e.r; ++R) {
+                        cols.forEach(C => {
+                            const cell = ws[XLSX.utils.encode_cell({c: C, r: R})];
+                            if(cell && cell.t === 'n') cell.z = numberFormat;
+                        });
+                    }
+                };
+
+                // Sheet 01. Tong_Chi_Phi: cột B (index 1)
+                applyNumberFormat(wsTotal, [1]); 
+                
+                // Sheet 02. Chi_Tiet_Thit: cột D (index 3) và E (index 4)
+                applyNumberFormat(wsMeat, [3, 4]);
+                
+                // Sheet 03. Chi_Tiet_Hai_San: cột D (index 3) và E (index 4)
+                applyNumberFormat(wsSeafood, [3, 4]);
                 
                 // Xuất file
                 XLSX.writeFile(wb, `Du_lieu_mua_hang_${exportName}.xlsx`);
                 showNotification('Đã xuất file Excel thành công');
             });
-            
+            // # KẾT THÚC BỔ SUNG: XUẤT FILE EXCEL
+
             // Thêm mặt hàng thịt mới
             document.getElementById('addMeatBtn').addEventListener('click', function() {
                 const nameInput = document.getElementById('otherMeatName');
