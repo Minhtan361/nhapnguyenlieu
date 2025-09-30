@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <!-- Favicon chuẩn (bắt buộc) -->
-<link rel="icon" href="https://minhtan361.github.io/nhapnguyenlieu/logo/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="https://minhtan361.github.io/nhapnguyenlieu/logo/favicon.ico" type="image/x-icon">
 
-<!-- PNG favicon nhiều kích thước -->
 <link rel="icon" type="image/png" sizes="16x16" href="https://minhtan361.github.io/nhapnguyenlieu/logo/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="https://minhtan361.github.io/nhapnguyenlieu/logo/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="57x57" href="https://minhtan361.github.io/nhapnguyenlieu/logo/favicon-57x57.png">
@@ -333,6 +331,10 @@
                             </div>
                         </div>
                         
+                        <div class="text-end mt-2">
+                            <strong>Tổng tiền Thịt: </strong>
+                            <span id="totalMeatAmount" class="text-primary fw-bold">0 VND</span>
+                        </div>
                         <div class="d-grid gap-2 mt-4">
                             <button class="btn btn-primary btn-lg" id="saveMeatData">
                                 <i class="fas fa-drumstick-bite me-2"></i>Lưu thông tin Thịt
@@ -387,7 +389,11 @@
                                 <button class="btn btn-outline-secondary" type="button" id="addSeafoodBtn">Thêm</button>
                             </div>
                         </div>
-                        
+
+                        <div class="text-end mt-2">
+                            <strong>Tổng tiền Hải sản: </strong>
+                            <span id="totalSeafoodAmount" class="text-primary fw-bold">0 VND</span>
+                        </div>
                         <div class="d-grid gap-2 mt-4">
                             <button class="btn btn-primary btn-lg" id="saveSeafoodData">
                                 <i class="fas fa-fish me-2"></i>Lưu thông tin Hải sản
@@ -426,12 +432,12 @@
                                     </tbody>
                             </table>
                         </div>
+                        
+                        <div id="dailySummary" class="alert alert-info mt-3" style="display:none;">
+                            </div>
                         <div class="d-flex justify-content-between mt-3">
                             <button class="btn btn-danger" id="deleteDate">
                                 <i class="fas fa-trash me-2"></i>Xóa dữ liệu ngày này
-                            </button>
-                            <button class="btn btn-success" id="calculateTotal">
-                                <i class="fas fa-calculator me-2"></i>Tính tổng
                             </button>
                             <button class="btn btn-warning" id="toggleEditMode">
                                 <i class="fas fa-edit me-2"></i>Chỉnh sửa
@@ -481,10 +487,18 @@
                         </div>
                         
                         <div class="stats-box mb-3">
+                            <div class="stats-number" id="totalMeatAmountStat">0 VND</div>
+                            <div class="stats-label">Tổng tiền thịt</div>
+                        </div>
+                        <div class="stats-box mb-3">
                             <div class="stats-number" id="totalSeafood">0 kg</div>
                             <div class="stats-label">Tổng lượng hải sản</div>
                         </div>
                         
+                        <div class="stats-box mb-3">
+                            <div class="stats-number" id="totalSeafoodAmountStat">0 VND</div>
+                            <div class="stats-label">Tổng tiền hải sản</div>
+                        </div>
                         <div class="stats-box mb-3">
                             <div class="stats-number" id="totalAmount">0 VND</div>
                             <div class="stats-label">Tổng tiền</div>
@@ -615,6 +629,35 @@
                 });
             }
             
+            // BỔ SUNG: Tính toán tổng tiền cho các mục nhập liệu Thịt/Hải sản
+            function updateDailyInputTotals() {
+                let totalMeat = 0;
+                let totalSeafood = 0;
+                
+                // Tính tổng thịt
+                document.querySelectorAll('#meatItems .food-item').forEach(item => {
+                    const totalInput = item.querySelector('input[placeholder*="Thành tiền"]');
+                    if (totalInput && totalInput.value) {
+                        // Chuyển đổi chuỗi định dạng VND ngược lại thành số để tính toán
+                        const value = totalInput.value.replace(/(\.|\s)*/g, ''); 
+                        totalMeat += parseFloat(value) || 0;
+                    }
+                });
+                document.getElementById('totalMeatAmount').textContent = formatCurrencyVND(totalMeat) + ' VND';
+
+                // Tính tổng hải sản
+                document.querySelectorAll('#seafoodItems .food-item').forEach(item => {
+                    const totalInput = item.querySelector('input[placeholder*="Thành tiền"]');
+                    if (totalInput && totalInput.value) {
+                        // Chuyển đổi chuỗi định dạng VND ngược lại thành số để tính toán
+                        const value = totalInput.value.replace(/(\.|\s)*/g, '');
+                        totalSeafood += parseFloat(value) || 0;
+                    }
+                });
+                document.getElementById('totalSeafoodAmount').textContent = formatCurrencyVND(totalSeafood) + ' VND';
+            }
+            // KẾT THÚC BỔ SUNG
+
             // Tính toán thành tiền khi số lượng hoặc đơn giá thay đổi
             function setupCalculation() {
                 document.querySelectorAll('.food-item').forEach(item => {
@@ -628,6 +671,9 @@
                             const price = parseFloat(priceInput.value) || 0;
                             const total = quantity * price;
                             totalInput.value = formatCurrencyVND(total);
+                            // BỔ SUNG: Cập nhật tổng tiền ngay khi tính toán xong
+                            updateDailyInputTotals(); 
+                            // KẾT THÚC BỔ SUNG
                         };
                         
                         quantityInput.addEventListener('input', calculateTotal);
@@ -636,11 +682,13 @@
                 });
             }
 
-            // Hàm cập nhật các ô thống kê
+            // Hàm cập nhật các ô thống kê (ĐÃ SỬA ĐỂ TÍNH VÀ HIỂN THỊ CẢ TỔNG TIỀN THEO DANH MỤC)
             function updateStats(filteredData) {
                 let totalDays = 0;
                 let totalMeat = 0;
                 let totalSeafood = 0;
+                let totalMeatAmount = 0; // ĐÃ THÊM
+                let totalSeafoodAmount = 0; // ĐÃ THÊM
                 let totalAmount = 0;
 
                 for (const data of Object.values(filteredData)) {
@@ -651,7 +699,9 @@
                             // Chỉ tính những mặt hàng có quantity > 0
                             if (details.quantity > 0) {
                                 totalMeat += details.quantity;
-                                totalAmount += details.total || (details.quantity * details.price);
+                                const itemTotal = details.total || (details.quantity * details.price); // Tính lại total nếu bị thiếu
+                                totalMeatAmount += itemTotal; // ĐÃ THÊM
+                                totalAmount += itemTotal;
                             }
                         }
                     }
@@ -661,7 +711,9 @@
                             // Chỉ tính những mặt hàng có quantity > 0
                             if (details.quantity > 0) {
                                 totalSeafood += details.quantity;
-                                totalAmount += details.total || (details.quantity * details.price);
+                                const itemTotal = details.total || (details.quantity * details.price); // Tính lại total nếu bị thiếu
+                                totalSeafoodAmount += itemTotal; // ĐÃ THÊM
+                                totalAmount += itemTotal;
                             }
                         }
                     }
@@ -669,7 +721,9 @@
 
                 document.getElementById('totalDays').textContent = totalDays;
                 document.getElementById('totalMeat').textContent = totalMeat.toFixed(2) + ' kg';
+                document.getElementById('totalMeatAmountStat').textContent = formatCurrencyVND(totalMeatAmount) + ' VND'; // HIỂN THỊ TỔNG TIỀN THỊT
                 document.getElementById('totalSeafood').textContent = totalSeafood.toFixed(2) + ' kg';
+                document.getElementById('totalSeafoodAmountStat').textContent = formatCurrencyVND(totalSeafoodAmount) + ' VND'; // HIỂN THỊ TỔNG TIỀN HẢI SẢN
                 document.getElementById('totalAmount').textContent = formatCurrencyVND(totalAmount) + ' VND';
             }
             
@@ -692,11 +746,22 @@
                     const quantityInput = item.querySelector('input[placeholder*="Số lượng"]');
                     const priceInput = item.querySelector('input[placeholder*="Đơn giá"]');
                     
-                    if (nameInput && quantityInput && priceInput) {
+                    // Lấy tên mặt hàng từ label nếu không có data-name (cho các mục cố định)
+                    let name = '';
+                    if (nameInput && nameInput.dataset.name) {
+                        name = nameInput.dataset.name;
+                    } else {
+                        // Tìm label tương ứng trong food-item
+                        const label = item.querySelector('label.form-label');
+                        if (label) {
+                            name = label.textContent.trim();
+                        }
+                    }
+
+                    if (name && quantityInput && priceInput) {
                         const quantity = parseFloat(quantityInput.value);
                         // Chỉ lưu những mục có số lượng > 0
                         if (quantity > 0) {
-                            const name = nameInput.dataset.name || nameInput.value.trim(); 
                             const price = parseFloat(priceInput.value) || 0;
                             itemsToSave[name] = {
                                 quantity: quantity,
@@ -728,6 +793,9 @@
                     document.querySelectorAll(`${containerId} .food-item input[placeholder*="Thành tiền"]`).forEach(input => {
                         input.value = '';
                     });
+                    
+                    // Cập nhật lại tổng tiền sau khi xóa input
+                    updateDailyInputTotals();
                 })
                 .catch((error) => {
                     showNotification('Lỗi khi lưu dữ liệu: ' + error.message, false);
@@ -746,7 +814,7 @@
 
             // Gỡ bỏ sự kiện cho nút saveData cũ (nếu nó không bị ẩn)
 
-            // Xem dữ liệu theo ngày
+            // Xem dữ liệu theo ngày (ĐÃ SỬA ĐỂ HIỂN THỊ TỔNG TRỰC TIẾP)
             document.getElementById('viewDate').addEventListener('change', function() {
                 const viewDate = this.value;
                 const tableBody = document.querySelector('#dataTable tbody');
@@ -754,6 +822,12 @@
                 
                 // Ẩn cột chỉnh sửa nếu không ở chế độ chỉnh sửa
                 document.getElementById('editColumnHeader').style.display = isEditMode ? 'table-cell' : 'none';
+                
+                // Khởi tạo biến cho tóm tắt trực tiếp
+                let dailyMeatQty = 0;
+                let dailySeafoodQty = 0;
+                let dailyMeatAmount = 0;
+                let dailySeafoodAmount = 0;
                 
                 if (purchaseData[viewDate]) {
                     const data = purchaseData[viewDate];
@@ -765,6 +839,15 @@
                             const itemTotal = details.total || (details.quantity * details.price); 
 
                             if (details.quantity > 0) {
+                                // Cập nhật tổng hàng ngày
+                                if (items === data.meat) {
+                                    dailyMeatQty += details.quantity;
+                                    dailyMeatAmount += itemTotal;
+                                } else if (items === data.seafood) {
+                                    dailySeafoodQty += details.quantity;
+                                    dailySeafoodAmount += itemTotal;
+                                }
+                                
                                 const row = document.createElement('tr');
                                 row.innerHTML = `
                                     <td>${item}</td>
@@ -789,7 +872,7 @@
                     // Hiển thị hải sản
                     if (data.seafood) renderItems(data.seafood);
                     
-                    // Hiển thị tổng
+                    // Hiển thị tổng chung
                     const totalRow = document.createElement('tr');
                     totalRow.className = 'total-row';
                     totalRow.innerHTML = `
@@ -808,6 +891,14 @@
                     `;
                     tableBody.appendChild(infoRow);
                     
+                    // Cập nhật TÓM TẮT TRỰC TIẾP
+                    const dailySummaryDiv = document.getElementById('dailySummary');
+                    dailySummaryDiv.style.display = 'block';
+                    dailySummaryDiv.innerHTML = `
+                        <p class="mb-1"><strong>🥩 Thịt: </strong> Tổng lượng: ${dailyMeatQty.toFixed(2)} kg | Tổng tiền: <span class="text-primary fw-bold">${formatCurrencyVND(dailyMeatAmount)} VND</span></p>
+                        <p class="mb-0"><strong>🦐 Hải sản: </strong> Tổng lượng: ${dailySeafoodQty.toFixed(2)} kg | Tổng tiền: <span class="text-primary fw-bold">${formatCurrencyVND(dailySeafoodAmount)} VND</span></p>
+                    `;
+                    
                     // Thêm sự kiện cho các nút chỉnh sửa
                     if (isEditMode) {
                         document.querySelectorAll('.edit-item').forEach(btn => {
@@ -824,6 +915,7 @@
                         <td colspan="${isEditMode ? '5' : '4'}" class="text-center">Không có dữ liệu cho ngày này</td>
                     `;
                     tableBody.appendChild(row);
+                    document.getElementById('dailySummary').style.display = 'none';
                 }
             });
             
@@ -915,43 +1007,8 @@
                 }
             });
             
-            // Tính tổng
-            document.getElementById('calculateTotal').addEventListener('click', function() {
-                const viewDate = document.getElementById('viewDate').value;
-                let totalMeat = 0;
-                let totalSeafood = 0;
-                let totalAmount = 0;
-                
-                if (purchaseData[viewDate]) {
-                    const data = purchaseData[viewDate];
-                    
-                    if (data.meat) {
-                        for (const details of Object.values(data.meat)) {
-                            if (details.quantity > 0) {
-                                totalMeat += details.quantity;
-                                totalAmount += details.total || (details.quantity * details.price);
-                            }
-                        }
-                    }
-                    
-                    if (data.seafood) {
-                        for (const details of Object.values(data.seafood)) {
-                            if (details.quantity > 0) {
-                                totalSeafood += details.quantity;
-                                totalAmount += details.total || (details.quantity * details.price);
-                            }
-                        }
-                    }
-                    
-                    alert(`Tổng kết ngày ${viewDate}:
-- Tổng lượng thịt: ${totalMeat.toFixed(2)} kg
-- Tổng lượng hải sản: ${totalSeafood.toFixed(2)} kg
-- Tổng tiền: ${formatCurrencyVND(totalAmount)} VND`);
-                } else {
-                    showNotification('Không có dữ liệu để tính tổng', false);
-                }
-            });
-            
+            // ĐÃ XÓA CHỨC NĂNG CỦA calculateTotal BUTTON THEO YÊU CẦU
+
             // Chuyển đổi chế độ chỉnh sửa
             document.getElementById('toggleEditMode').addEventListener('click', function() {
                 if (!isAuthenticated) {
@@ -1031,7 +1088,7 @@
                 updateStats(filteredData);
             });
             
-            // # BỔ SUNG: XUẤT FILE EXCEL ĐA SHEET VÀ ĐỊNH DẠNG SỐ TIỀN
+            // # BỔ SUNG: XUẤT FILE EXCEL ĐA SHEET VÀ ĐỊNH DẠNG SỐ TIỀN (ĐÃ SỬA THÊM TỔNG TIỀN THEO DANH MỤC)
             document.getElementById('exportExcel').addEventListener('click', function() {
                 const month = document.getElementById('monthSelector').value;
                 const startDateRange = document.getElementById('startDateSelector').value;
@@ -1075,12 +1132,15 @@
                 }
                 
                 // Chuẩn bị dữ liệu cho Excel (3 sheets)
-                let wsDataTotal = [['Ngày', 'Tổng Chi Phí (VND)']];
+                // ĐÃ SỬA HEADER ĐỂ THÊM CỘT TỔNG TIỀN THỊT/HẢI SẢN
+                let wsDataTotal = [['Ngày', 'Tổng Chi Phí (VND)', 'Tổng Tiền Thịt (VND)', 'Tổng Tiền Hải Sản (VND)']]; 
                 let wsDataMeat = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)']];
                 let wsDataSeafood = [['Ngày', 'Mặt hàng', 'Số lượng (kg)', 'Đơn giá (VND)', 'Thành tiền (VND)']];
                 
                 for (const [date, data] of Object.entries(filteredData)) {
                     let dailyTotal = 0;
+                    let dailyMeatTotal = 0; // ĐÃ THÊM
+                    let dailySeafoodTotal = 0; // ĐÃ THÊM
                     
                     const processItems = (items, sheetData) => {
                         for (const [item, details] of Object.entries(items)) {
@@ -1088,6 +1148,11 @@
                                 
                                 const finalTotal = details.total || (details.quantity * details.price); 
                                 dailyTotal += finalTotal;
+                                
+                                // Ghi nhận tổng tiền theo danh mục
+                                if (sheetData === wsDataMeat) dailyMeatTotal += finalTotal;
+                                else if (sheetData === wsDataSeafood) dailySeafoodTotal += finalTotal;
+                                
                                 sheetData.push([
                                     date,
                                     item,
@@ -1102,10 +1167,12 @@
                     if (data.meat) processItems(data.meat, wsDataMeat);
                     if (data.seafood) processItems(data.seafood, wsDataSeafood);
                     
-                    // Thêm vào sheet Tổng Chi Phí
+                    // Thêm vào sheet Tổng Chi Phí (Bao gồm Tổng tiền Thịt và Hải sản)
                     wsDataTotal.push([
                         date,
-                        Math.round(dailyTotal)
+                        Math.round(dailyTotal),
+                        Math.round(dailyMeatTotal),
+                        Math.round(dailySeafoodTotal)
                     ]);
                 }
                 
@@ -1139,8 +1206,8 @@
                     }
                 };
 
-                // Sheet 01. Tong_Chi_Phi: cột B (index 1)
-                applyNumberFormat(wsTotal, [1]); 
+                // Sheet 01. Tong_Chi_Phi: cột B (index 1), C (index 2), D (index 3)
+                applyNumberFormat(wsTotal, [1, 2, 3]); 
                 
                 // Sheet 02. Chi_Tiet_Thit: cột D (index 3) và E (index 4)
                 applyNumberFormat(wsMeat, [3, 4]);
@@ -1190,6 +1257,9 @@
                     const quantity = parseFloat(quantityInput.value) || 0;
                     const price = parseFloat(priceInputNew.value) || 0;
                     totalInput.value = formatCurrencyVND(quantity * price);
+                    // BỔ SUNG
+                    updateDailyInputTotals(); 
+                    // KẾT THÚC BỔ SUNG
                 };
                 
                 quantityInput.addEventListener('input', calculateTotal);
@@ -1200,6 +1270,10 @@
                 qtyInput.value = '';
                 priceInput.value = '';
                 
+                // BỔ SUNG: Cập nhật lại tổng tiền cho mục Thịt
+                updateDailyInputTotals(); 
+                // KẾT THÚC BỔ SUNG
+
                 showNotification(`Đã thêm mặt hàng "${name}" vào danh sách thịt`);
             });
             
@@ -1239,6 +1313,9 @@
                     const quantity = parseFloat(quantityInput.value) || 0;
                     const price = parseFloat(priceInputNew.value) || 0;
                     totalInput.value = formatCurrencyVND(quantity * price);
+                    // BỔ SUNG
+                    updateDailyInputTotals();
+                    // KẾT THÚC BỔ SUNG
                 };
                 
                 quantityInput.addEventListener('input', calculateTotal);
@@ -1248,6 +1325,10 @@
                 nameInput.value = '';
                 qtyInput.value = '';
                 priceInput.value = '';
+                
+                // BỔ SUNG: Cập nhật lại tổng tiền cho mục Hải sản
+                updateDailyInputTotals();
+                // KẾT THÚC BỔ SUNG
                 
                 showNotification(`Đã thêm mặt hàng "${name}" vào danh sách hải sản`);
             });
@@ -1259,6 +1340,9 @@
             // Khởi tạo
             setupCalculation();
             setupRealtimeListener();
+            
+            // BỔ SUNG: Chạy hàm tính tổng input ban đầu để cập nhật giao diện
+            updateDailyInputTotals();
         });
     </script>
 </body>
